@@ -3,6 +3,8 @@
 /*.local
 /*.~dsk
 /Debug/Win32/*.dcu
+/Debug/Win32/*.exe
+/Debug/Win32/*.ini
 /Debug/units
 /2018_06_07
 /__history
