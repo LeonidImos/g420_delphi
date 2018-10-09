@@ -34,7 +34,9 @@ G420_MAX_PROG_LIST = 200;
   Comand_g420_ProgArr     = $4010;
   Comand_g420_SetPlayMode = $4012;
 
-  Comand_Send_Info        = $4002;
+  Comand_Send_Info        = $8002;
+
+  DSP_Comand_Get_Array               = $030E;
 
 
 // (Target_id=1..4)
@@ -45,6 +47,8 @@ G420_MAX_PROG_LIST = 200;
 // (Target_id=0)
   Mess_Device_Info = 1;
   Mess_Device_Errors = 2;
+  Mess_Data = 5;
+
   Mess_Prog_Arr_Status = $4010;
 // (Target_id=1..4)
   Mess_Status = 1;

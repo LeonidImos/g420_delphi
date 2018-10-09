@@ -74,6 +74,7 @@ type
     Button9: TButton;
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -105,6 +106,7 @@ type
     procedure ListClearButtonClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -538,8 +540,24 @@ begin
 end;
 //------------------------------------------------------------------------------
 procedure TVisForm.Button2Click(Sender: TObject);
+var mess: TG420PlayMess;
 begin
-  SendCommandDSP2(1, Comand_Send_Info, 0,0,0);
+//  SendCommandDSP2(1, DSP_Comand_Get_Array, 0,0,0);
+  mess.PlayCommand:=100;
+  mess.StartAdress:=$400;
+  SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
+
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button3Click(Sender: TObject);
+var mess: TG420PlayMess;
+begin
+//  SendCommandDSP2(1, DSP_Comand_Get_Array, 0,0,0);
+  mess.PlayCommand:=101;
+  mess.StartAdress:=$400;
+  SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
+
 end;
 
 //------------------------------------------------------------------------------
@@ -869,13 +887,13 @@ begin
            Mess_Device_Info: ReceiveDeviceInfo(p,header.Length,ArrIn);
            Mess_Device_Errors: ReceiveSysError(p,header.Length,ArrIn);
 //           Mess_Device_TimeStat: ReceiveTimeStat(p,ArrIn);
-//           Mess_Data: ReceivePersBuf(p,header.Length,ArrIn);
+           Mess_Data: Memo1.Lines.Add('Получен персональный буфер, length = '+IntToStr(header.Length - 16));
 //           Mess_SysMegaBuffer: ReceiveSysMegaBuf(p,ArrIn);
 //           Mess_Opt_Control: ReceiveOptControl(p,header.Length,ArrIn);
 //           Mess_Opt_Status: ReceiveOptStatus(p,header.Length,ArrIn);
            Mess_Prog_Arr_Status: ReceiveProgArrStatus(p,header.Length,ArrIn);
 //           Mess_Run_Self_Test: ReceiveSelfTest(p,ArrIn);
-//           else Memo1.Lines.Add('неизвестная команда = '+Strg(fHex,header.Command,4)+', target = '+IntToStr(header.Target_ID));
+           else Memo1.Lines.Add('неизвестная команда = '+Strg(fHex,header.Command,4)+', target = '+IntToStr(header.Target_ID));
          end;
 
        end;
@@ -892,7 +910,7 @@ begin
 //              Mess_TS_Struct: Board[ba].ReceiveStruct(p,ArrIn);
 //              Mess_Speed_PIDs: Board[ba].ReceiveSpeed(p,ArrIn);
 //              Mess_T2MI_Info: Board[ba].ReceiveT2MI_Info(p,ArrIn);
-//              else Memo1.Lines.Add('неизвестная команда = '+Strg(fHex,header.Command,4)+', target = '+IntToStr(header.Target_ID));
+              else Memo1.Lines.Add('неизвестная команда = '+Strg(fHex,header.Command,4)+', target = '+IntToStr(header.Target_ID));
             end;
           end;
   end;
@@ -2599,7 +2617,7 @@ begin
 
   if G420FileStruct.state<>1 then  // программирование выключено, отбрасываем сообщение
   begin
-    Memo1.Lines.Add('Получет ответ от Г-420 при остановленном программировании.');
+    Memo1.Lines.Add('Получен ответ от Г-420 при остановленном программировании.');
     exit;
   end;
 

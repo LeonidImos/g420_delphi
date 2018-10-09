@@ -617,13 +617,22 @@ object VisForm: TVisForm
         OnClick = Button9Click
       end
       object Button2: TButton
-        Left = 368
-        Top = 24
+        Left = 340
+        Top = 12
         Width = 75
         Height = 25
         Caption = 'Button2'
         TabOrder = 5
         OnClick = Button2Click
+      end
+      object Button3: TButton
+        Left = 432
+        Top = 12
+        Width = 75
+        Height = 25
+        Caption = 'Button3'
+        TabOrder = 6
+        OnClick = Button3Click
       end
     end
   end
