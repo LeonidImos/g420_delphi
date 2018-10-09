@@ -73,6 +73,7 @@ type
     Edit1: TEdit;
     Button9: TButton;
     Button1: TButton;
+    Button2: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -103,6 +104,7 @@ type
     procedure Button9Click(Sender: TObject);
     procedure ListClearButtonClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -127,6 +129,7 @@ type
     SignalList: array of TSignalListItem3;
     ProgList: array[0..G420_MAX_PROG_LIST-1]of TProgItem;
     ProgListCount: integer;
+    request_id: word;
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     function EventConnect(CurTime: TDateTime): boolean;
     function EventSendTimer(CurTime: TDateTime): boolean;
@@ -138,6 +141,9 @@ type
     function SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean;
     function SendCommandSys(target_id,comand:word): boolean;
     function SendCommandSysParam(target_id,comand,param:word): boolean;
+    function SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word;
+    procedure SendCommandDSP_continue(target_id,comand, block_length: word; start_addr: dword; P_param: PArrWord; req_id_force: word);
+    function SendCommandDSP2(target_id,comand,count,param1,param2: word): word;
     procedure ReceiveDeviceInfo(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveSysError(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveProgArrStatus(p,leng:integer; const ArrIn: TarrTCP);
@@ -189,6 +195,7 @@ begin
   LoadFromFile;
   Application.OnIdle:=ApplicationIdle;
   ProgListCount:=0;
+  request_id:=1;
 end;
 //------------------------------------------------------------------------------
 procedure TVisForm.FormDestroy(Sender: TObject);
@@ -529,6 +536,12 @@ begin
   end;
 
 end;
+//------------------------------------------------------------------------------
+procedure TVisForm.Button2Click(Sender: TObject);
+begin
+  SendCommandDSP2(1, Comand_Send_Info, 0,0,0);
+end;
+
 //------------------------------------------------------------------------------
 
 procedure TVisForm.Button9Click(Sender: TObject);
@@ -959,6 +972,64 @@ end;
 function TVisForm.SendCommandSysParam(target_id,comand,param:word): boolean;
 begin
   result:=SendCommand(target_id,comand,1,@param);
+end;
+//------------------------------------------------------------------------------
+function TVisForm.SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word;
+var i: integer;
+params: array[0..MAX_OUT_MESS_PARAM+4-1]of word;
+begin
+  if req_id_force=$ffff then
+  begin
+    inc(request_id); if request_id>$ff00 then request_id:=0;
+    req_id_force:=request_id;
+  end;
+  if count>MAX_OUT_MESS_PARAM then count:=MAX_OUT_MESS_PARAM;
+
+  params[0]:=$55aa; params[1]:=comand; params[2]:=count+1 ;
+  params[3]:=req_id_force;
+  for i:=0 to count-1 do params[i+4]:=P_param[i];
+
+  SendCommand(target_id, Comand_Send_Info, count+4, @params);
+  result:=request_id;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.SendCommandDSP_continue(target_id,comand, block_length: word; start_addr: dword; P_param: PArrWord; req_id_force: word);
+var i: integer;
+params: array[0..SEND_BLOCK_SIZE+8-1]of word;
+check_sum, count: word;
+begin
+{  if req_id_force=$ffff then
+  begin
+    inc(request_id); if request_id>$ff00 then request_id:=0;
+    req_id_force:=request_id;
+  end;     }
+  count:=(block_length+1)shr 1; // размер блока данных в словах (block_length - в байтах)
+  if count>SEND_BLOCK_SIZE then count:=SEND_BLOCK_SIZE;
+
+  params[0]:=$55aa; params[1]:=comand; params[2]:=count+5 ;
+  params[3]:=req_id_force;
+  params[5]:=start_addr and $ffff;
+  params[6]:=(start_addr shr 16) and $ffff;
+  params[7]:=block_length;
+  check_sum:=req_id_force;
+  for i:=5 to 7 do check_sum:=(check_sum + params[i]) and $ffff;
+
+  for i:=0 to count-1 do
+  begin
+    params[i+8]:=P_param[i];
+    check_sum:=(check_sum + P_param[i]) and $ffff;
+  end;
+  params[4]:=check_sum;
+
+  SendCommand(target_id, Comand_Send_Info, count+8, @params);
+end;
+//------------------------------------------------------------------------------
+function TVisForm.SendCommandDSP2(target_id,comand,count,param1,param2: word): word;
+var params: array[0..1]of word;
+begin
+  if count>2 then count:=2;
+  params[0]:=param1; params[1]:=param2;
+  result:=SendCommandDSP(target_id, comand, count, @params);
 end;
 //------------------------------------------------------------------------------
 

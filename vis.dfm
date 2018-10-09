@@ -616,6 +616,15 @@ object VisForm: TVisForm
         TabOrder = 4
         OnClick = Button9Click
       end
+      object Button2: TButton
+        Left = 368
+        Top = 24
+        Width = 75
+        Height = 25
+        Caption = 'Button2'
+        TabOrder = 5
+        OnClick = Button2Click
+      end
     end
   end
   object g420OpenDialog: TOpenDialog
@@ -627,7 +636,7 @@ object VisForm: TVisForm
     Left = 336
     Top = 80
     Bitmap = {
-      494C010102000800980010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101020008009C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -18,6 +18,8 @@ MAX_BITRATE_LIST = 32;
 
 MAX_OPT_ARR = 32;
 
+SEND_BLOCK_SIZE = 120;
+
 
 G420_BLOCK_DATA = 1024; // 512 либо 1024
 G420_SD_ALLIGN = 512;   // если файл не кратен этой величине, дополняем $ff чтобы стал кратен
@@ -31,6 +33,8 @@ G420_MAX_PROG_LIST = 200;
   Comand_Set_Device_Mode  = $4003;
   Comand_g420_ProgArr     = $4010;
   Comand_g420_SetPlayMode = $4012;
+
+  Comand_Send_Info        = $4002;
 
 
 // (Target_id=1..4)
