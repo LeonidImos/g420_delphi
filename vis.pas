@@ -724,13 +724,13 @@ begin
   if (MyClientSocket.Connected)and(factory_num>0)and(CurTime>SendStatusTime) then
   begin
     SendStatusTime:=CurTime+1/(24*3600); // 1 s
-    SendCommandSys(1, Comand_Get_Status);
+//    SendCommandSys(1, Comand_Get_Status);
     if wath_dog>0 then dec(wath_dog) else
     begin
       ConnectButton.Tag:=0;
       ConnectButton.Caption:='Установить соединение';
     end;
-    if (DeviceErrorChB.Checked) then
+//    if (DeviceErrorChB.Checked) then
       SendCommandSys(0,Comand_Get_Device_Errors);
   end;
 
@@ -875,9 +875,13 @@ end;
 //------------------------------------------------------------------------------
 procedure TVisForm.GetMess(p,leng_mess:integer; const ArrIn: TarrTCP);
 var header: PEthHeader;
+pArrW: PArrWord;
+leng, i, j: integer;
+st: string;
 //ba: integer;
 begin
   header:=@ArrIn[p];
+
 //  if FormHandle>0 then PostMessage(FormHandle, WM_LED_EVENTS, DATA_LED_ID, clYellow);
 //  if b_d.Log.log_com_enable then LogRecvCommand(header, @ArrIn[p+16]);
 
@@ -887,7 +891,24 @@ begin
            Mess_Device_Info: ReceiveDeviceInfo(p,header.Length,ArrIn);
            Mess_Device_Errors: ReceiveSysError(p,header.Length,ArrIn);
 //           Mess_Device_TimeStat: ReceiveTimeStat(p,ArrIn);
-           Mess_Data: Memo1.Lines.Add('Получен персональный буфер, length = '+IntToStr(header.Length - 16));
+           Mess_Data:
+           begin
+             Memo1.Lines.Add('Получен персональный буфер, length = '+IntToStr(header.Length - 16));
+             pArrW:=@ArrIn[p+16];
+             leng:=(header.Length - 16) div 2;
+             j:=0; st:='';
+             for i:=0 to leng-1 do
+             begin
+               st:=st+IntToHex(pArrW[i], 4)+' ';
+               if (i mod 8)=7 then
+               begin
+                 Memo1.Lines.Add(st);
+                 st:='';
+               end;
+             end;
+             if st<>'' then Memo1.Lines.Add(st);
+
+           end;
 //           Mess_SysMegaBuffer: ReceiveSysMegaBuf(p,ArrIn);
 //           Mess_Opt_Control: ReceiveOptControl(p,header.Length,ArrIn);
 //           Mess_Opt_Status: ReceiveOptStatus(p,header.Length,ArrIn);
@@ -1287,6 +1308,7 @@ begin
 end;
 begin
   if leng<>16 + cError_Max_Num + cError_FIFO_Leng + 8 then exit;
+  wath_dog:=5;
   SysErrors:=@ArrIn[p+16];
   if SysErrors.Total_Counts=0 then exit;
   Memo1.Lines.Add('----------------------------------------------');
@@ -1306,6 +1328,7 @@ begin
     begin
       Memo1.Lines.Add(IntToHex(SysErrors.FIFO[i],2)+'H'+':  '+err_name(SysErrors.FIFO[i]));
     end;
+
 end;
 //------------------------------------------------------------------------------
 procedure TVisForm.ReceiveProgArrStatus(p,leng:integer; const ArrIn: TarrTCP);
