@@ -543,6 +543,14 @@ object VisForm: TVisForm
       TabOrder = 6
     end
   end
+  object PageControl2: TPageControl
+    Left = 0
+    Top = 0
+    Width = 584
+    Height = 605
+    Align = alClient
+    TabOrder = 1
+  end
   object Panel2: TPanel
     Left = 0
     Top = 0
@@ -550,22 +558,7 @@ object VisForm: TVisForm
     Height = 605
     Align = alClient
     BevelOuter = bvNone
-    TabOrder = 1
-    object Memo1: TMemo
-      Left = 0
-      Top = 73
-      Width = 584
-      Height = 532
-      Align = alClient
-      Font.Charset = RUSSIAN_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -13
-      Font.Name = 'Courier New'
-      Font.Style = []
-      ParentFont = False
-      ScrollBars = ssVertical
-      TabOrder = 0
-    end
+    TabOrder = 2
     object Panel3: TPanel
       Left = 0
       Top = 0
@@ -573,7 +566,7 @@ object VisForm: TVisForm
       Height = 73
       Align = alTop
       BevelOuter = bvNone
-      TabOrder = 1
+      TabOrder = 0
       object MemoClearButton: TButton
         Left = 12
         Top = 12
@@ -618,22 +611,77 @@ object VisForm: TVisForm
         OnClick = Button9Click
       end
       object Button2: TButton
-        Left = 340
+        Left = 308
         Top = 12
         Width = 75
         Height = 25
-        Caption = 'Button2'
+        Caption = '101'
         TabOrder = 5
         OnClick = Button2Click
       end
       object Button3: TButton
-        Left = 432
+        Left = 389
         Top = 12
         Width = 75
         Height = 25
-        Caption = 'Button3'
+        Caption = '102'
         TabOrder = 6
         OnClick = Button3Click
+      end
+      object Button4: TButton
+        Left = 470
+        Top = 12
+        Width = 75
+        Height = 25
+        Caption = '103'
+        TabOrder = 7
+        OnClick = Button4Click
+      end
+    end
+    object PageControl: TPageControl
+      Left = 0
+      Top = 73
+      Width = 584
+      Height = 532
+      ActivePage = TabSheet4
+      Align = alClient
+      TabOrder = 1
+      object TabSheet3: TTabSheet
+        Caption = #1086#1073#1097#1080#1081' '#1083#1086#1075
+        object Memo1: TMemo
+          Left = 0
+          Top = 0
+          Width = 576
+          Height = 504
+          Align = alClient
+          Font.Charset = RUSSIAN_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -13
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          ScrollBars = ssVertical
+          TabOrder = 0
+        end
+      end
+      object TabSheet4: TTabSheet
+        Caption = #1086#1090#1083#1072#1076#1082#1072
+        ImageIndex = 1
+        object DebugMemo: TMemo
+          Left = 0
+          Top = 0
+          Width = 576
+          Height = 504
+          Align = alClient
+          Font.Charset = RUSSIAN_CHARSET
+          Font.Color = clBlack
+          Font.Height = -13
+          Font.Name = 'Courier New'
+          Font.Style = []
+          ParentFont = False
+          ScrollBars = ssBoth
+          TabOrder = 0
+        end
       end
     end
   end
@@ -646,7 +694,7 @@ object VisForm: TVisForm
     Left = 336
     Top = 80
     Bitmap = {
-      494C010102000800A00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800A80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

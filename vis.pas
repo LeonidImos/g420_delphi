@@ -26,12 +26,6 @@ type
     ConnectEdit: TEdit;
     ConnectButton: TButton;
     ConnectStatusPanel: TPanel;
-    Panel2: TPanel;
-    Memo1: TMemo;
-    Panel3: TPanel;
-    MemoClearButton: TButton;
-    MemoCopyButton: TButton;
-    DeviceErrorChB: TCheckBox;
     g420OpenDialog: TOpenDialog;
     ImageList1: TImageList;
     PageControl1: TPageControl;
@@ -70,11 +64,23 @@ type
     ListReadButton: TButton;
     Label2: TLabel;
     g420_bitrateOutEdit: TEdit;
+    Button1: TButton;
+    PageControl2: TPageControl;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    MemoClearButton: TButton;
+    MemoCopyButton: TButton;
+    DeviceErrorChB: TCheckBox;
     Edit1: TEdit;
     Button9: TButton;
-    Button1: TButton;
     Button2: TButton;
     Button3: TButton;
+    PageControl: TPageControl;
+    TabSheet3: TTabSheet;
+    Memo1: TMemo;
+    TabSheet4: TTabSheet;
+    DebugMemo: TMemo;
+    Button4: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -107,6 +113,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -132,6 +139,7 @@ type
     ProgList: array[0..G420_MAX_PROG_LIST-1]of TProgItem;
     ProgListCount: integer;
     request_id: word;
+    StartRequest: PRequest;
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     function EventConnect(CurTime: TDateTime): boolean;
     function EventSendTimer(CurTime: TDateTime): boolean;
@@ -150,6 +158,15 @@ type
     procedure ReceiveSysError(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveProgArrStatus(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveStatus(p:integer; const ArrIn: TarrTCP);
+
+    function AddRequest(req_id: word):PRequest;
+    procedure DeleteRequest(PReq: PRequest);
+    procedure ClearRequests;
+    function GetRequest(req_id: word; make_new: boolean): PRequest;
+
+    procedure ReceivePersBuf(p,leng:integer; const ArrIn: TarrTCP);
+    procedure ReceiveRequestBlock(length,target: word; buf: pointer);
+    procedure GetPersMess(mess_cod,req_id: word; length: dword; buf: pointer);
     function Strg(format: byte; Value: int64; Digits: integer; DecAllign: boolean = false): string;
     function IntToBin(Value: cardinal): string;
     function CurTimeFine: string;
@@ -220,12 +237,24 @@ end;
 procedure TVisForm.MemoClearButtonClick(Sender: TObject);
 begin
   Memo1.Clear;
+  case PageControl.TabIndex of
+    0: Memo1.Clear;
+    1: DebugMemo.Clear;
+    else exit;
+  end;
+
 end;
 //------------------------------------------------------------------------------
 procedure TVisForm.MemoCopyButtonClick(Sender: TObject);
+var memo: TMemo;
 begin
-  Memo1.SelectAll;
-  Memo1.CopyToClipboard;
+  case PageControl.TabIndex of
+    0: memo:=Memo1;
+    1: memo:=DebugMemo;
+    else exit;
+  end;
+  memo.SelectAll;
+  memo.CopyToClipboard;
 end;
 
 //------------------------------------------------------------------------------
@@ -543,7 +572,7 @@ procedure TVisForm.Button2Click(Sender: TObject);
 var mess: TG420PlayMess;
 begin
 //  SendCommandDSP2(1, DSP_Comand_Get_Array, 0,0,0);
-  mess.PlayCommand:=100;
+  mess.PlayCommand:=102;
   mess.StartAdress:=$400;
   SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
 
@@ -558,6 +587,16 @@ begin
   mess.StartAdress:=$400;
   SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
 
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button4Click(Sender: TObject);
+var mess: TG420PlayMess;
+begin
+//  SendCommandDSP2(1, DSP_Comand_Get_Array, 0,0,0);
+  mess.PlayCommand:=103;
+  mess.StartAdress:=$400;
+  SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
 end;
 
 //------------------------------------------------------------------------------
@@ -891,8 +930,8 @@ begin
            Mess_Device_Info: ReceiveDeviceInfo(p,header.Length,ArrIn);
            Mess_Device_Errors: ReceiveSysError(p,header.Length,ArrIn);
 //           Mess_Device_TimeStat: ReceiveTimeStat(p,ArrIn);
-           Mess_Data:
-           begin
+           Mess_Data: ReceivePersBuf(p,header.Length,ArrIn);
+           {begin
              Memo1.Lines.Add('Получен персональный буфер, length = '+IntToStr(header.Length - 16));
              pArrW:=@ArrIn[p+16];
              leng:=(header.Length - 16) div 2;
@@ -908,7 +947,7 @@ begin
              end;
              if st<>'' then Memo1.Lines.Add(st);
 
-           end;
+           end;  }
 //           Mess_SysMegaBuffer: ReceiveSysMegaBuf(p,ArrIn);
 //           Mess_Opt_Control: ReceiveOptControl(p,header.Length,ArrIn);
 //           Mess_Opt_Status: ReceiveOptStatus(p,header.Length,ArrIn);
@@ -1377,6 +1416,416 @@ begin
     SendCommandSys(0,Comand_Get_Device_Errors);
 end;
 //------------------------------------------------------------------------------
+function TVisForm.AddRequest(req_id: word):PRequest;
+begin
+  New(result);
+  result.request_id:=req_id;
+  result.blockcount:=0;
+  result.blocklength:=0;
+  result.length:=0;
+  result.time_live:=now+600.0/(24*3600); // время жизни буфера 600 секунд
+  result.prev:=nil;
+  result.next:=StartRequest;
+  if result.next<>nil then result.next.prev:=result;
+
+  StartRequest:=result;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.DeleteRequest(PReq: PRequest);
+begin
+  if PReq=nil then exit;
+  if PReq.prev=nil then StartRequest:=PReq.next
+  else PReq.prev.next:=PReq.next;
+  if PReq.next<>nil then PReq.next.prev:=PReq.prev;
+  SetLength(PReq.blocks_ok,0);
+  SetLength(PReq.arr,0);
+  Dispose(PReq);// PReq:=nil;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ClearRequests;
+begin
+  while StartRequest<>nil do DeleteRequest(StartRequest);
+end;
+//------------------------------------------------------------------------------
+function TVisForm.GetRequest(req_id: word; make_new: boolean): PRequest;
+var count: integer;
+cur_time: TDateTime;
+next: PRequest;
+begin
+  result:=StartRequest; count:=0; cur_time:=now;
+  while result<>nil do
+  begin
+    inc(count);
+    if result.request_id = req_id then exit;
+    next:=result.next;
+    if cur_time>result.time_live then DeleteRequest(result);
+    result:=next;
+  end;
+
+  if make_new then
+  begin
+    if count>=MAX_REQUEST_BUF then
+    begin
+      ClearRequests;
+      Memo1.Lines.Add('Превышено максимальное число буферов персональных сообщений (MAX_REQUEST_BUF='+IntToStr(MAX_REQUEST_BUF)+'), все буферы очищены');
+    end;
+    result:=AddRequest(req_id);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ReceivePersBuf(p,leng:integer; const ArrIn: TarrTCP);
+var i,len: integer;
+//st: string;
+header: PEthHeader;
+parr: PArrWord;
+begin
+//  exit;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if p+leng+16>=20000000 then
+  begin
+    Memo1.Lines.Add('Персональное сообщение превысило размер TCP буфера');
+//    AddLogFile('Персональное сообщение превысило размер TCP буфера', 'atp_log.txt');
+    exit;
+  end;
+
+  header:=@ArrIn[p];
+//  AddLog('ReceivePersBuf; Command_ID='+Strg(fHex, header.Command_ID, 4));
+
+  parr:=@ArrIn[p+16];
+
+  i:=0;
+
+  while i<((leng-16)div 2)do
+  begin
+    len:=parr[i+1];
+    if i+len+2>(leng-16)div 2 then
+    begin
+      Memo1.Lines.Add('Персональное сообщение вышло за пределы ethernet сообщения');
+//      AddLogFile('Персональное сообщение вышло за пределы ethernet сообщения', 'atp_log.txt');
+      exit;
+    end;
+    ReceiveRequestBlock(len,parr[i], @parr[i+2]);
+    inc(i,len+2);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ReceiveRequestBlock(length,target: word; buf: pointer);
+const
+FIRST_BLOCK         = $8000;
+LONG_PERS_MESS_MODE = $2000;
+ODD_LENGTH          = $1000;
+var
+block: PReqBlock;
+blockLong: PReqBlockLong;
+req_id:word;
+i, start, ind, param: dword;
+pArr: pArrByte;
+PReq: PRequest;
+ba, data_leng_test: integer;
+data_leng, full_length, block_count: dword;
+st: string;
+begin
+
+  if length<3 then
+  begin
+    st:='Слишком маленькая длина персонального сообщения = '+IntToStr(length);
+    st:='target='+IntToStr(target)+'; '+st;
+    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+  block:=buf;
+  req_id:=block.req_id;
+//  AddLogFile('receive ReqBlock: target='+IntToStr(target)+'; req_id='+Strg(fHex, req_id, 4)+'; leng='+IntToStr(length), 'req_log.txt');
+  if (block.mess_cod and LONG_PERS_MESS_MODE)=0 then
+  begin
+    param:=block.param;
+    pArr:=@block.arr[0];
+    data_leng_test:=(length-3)*2;
+  end
+  else
+  begin
+    if length<4 then
+    begin
+      st:='Слишком маленькая длина персонального сообщения = '+IntToStr(length);
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    blockLong:=buf;
+    param:=blockLong.param;
+    pArr:=@blockLong.arr[0];
+    data_leng_test:=(length-4)*2;
+  end;
+
+
+  if data_leng_test<=0 then
+  begin
+    st:='Слишком маленькая длина блока персонального сообщения = '+IntToStr(data_leng_test);
+    st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+  data_leng:=dword(data_leng_test);
+
+  if data_leng>512 then
+  begin
+    st:='Слишком большая длина блока персонального сообщения (>512), length='+IntToStr(data_leng)+' байт';
+    st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+//  AddLog('принят RequestBlock; req_id='+Strg(fHex, block.req_id, 4)+'; mess_cod='+
+//    Strg(fHex, block.mess_cod, 4)+'; param='+Strg(fHex, param, 8));
+
+  if req_id=$ffff then req_id:=target or $fffc;
+  if (block.mess_cod and FIRST_BLOCK)<>0 then  // первый блок
+  begin
+    if param>MAX_LENG_PERS_MESS then
+    begin
+      st:='Слишком большая длина персонального сообщения, length='+IntToStr(param)+' слов';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if param<1 then
+    begin
+      st:='Длина персонального сообщения = 0';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if data_leng>param*2 then
+    begin
+      st:='Длина блока превышает длину всего персонального сообщения';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if (data_leng<param*2)and(param<100) then
+    begin
+      st:='Персональное сообщение длиной <200 байт не влезло в 1 блок';
+      st:='длина блока='+IntToStr(data_leng)+'; '+'длина сообщения='+IntToStr(param*2)+'; '+st;
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+
+    full_length:=param*2;
+    if (block.mess_cod and ODD_LENGTH)<>0 then dec(full_length);
+    block_count:=((full_length-1) div data_leng) + 1;
+    if block_count=1 then
+    begin
+ //     if targ_to_ba(target-1, ba) then if Board[ba]<>nil then
+ //       Board[ba].
+      GetPersMess(block.mess_cod and $4fff, req_id, full_length, @pArr[0]);
+      exit;
+    end;
+
+    pReq:=GetRequest(req_id,true);
+    if pReq=nil then
+    begin
+      st:='Функция GetRequest с параметром make_new=true возвратила пустой указатель';
+      st:='длина блока='+IntToStr(data_leng)+'; '+'длина сообщения='+IntToStr(param*2)+'; '+st;
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    pReq.length:=full_length;
+//    if (block.mess_cod and ODD_LENGTH)<>0 then dec(pReq.length);
+    pReq.blocklength:=data_leng;
+//    pReq.blockcount:=((pReq.length-1) div pReq.blocklength) + 1;
+    pReq.blockcount:=block_count;
+
+    SetLength(pReq.blocks_ok, pReq.blockcount);
+    SetLength(pReq.arr, pReq.length);
+    if data_leng>pReq.length then data_leng:=pReq.length; // превышение на 1 байт - штатная ситуация при нечетной длине сообщения
+    Move(pArr[0], pReq.arr[0], data_leng);
+    pReq.blocks_ok[0]:=true;
+    for i:=1 to pReq.blockcount-1 do pReq.blocks_ok[i]:=false;
+  end
+  else                                         // последующие блоки
+  begin
+    pReq:=GetRequest(req_id,false);
+    if pReq=nil then
+    begin
+      st:='Не найден буфер персонального сообщения для не первого блока';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    start:=param*2;
+    if (start<pReq.blocklength)or((start mod pReq.blocklength)<>0) then
+    begin
+      st:='Ошибочное смещение блока персонального сообщения для не первого блока';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    ind:=start div pReq.blocklength;
+    if (ind<pReq.blockcount)and(start<pReq.length) then
+    begin
+      if data_leng>pReq.length-start then data_leng:=pReq.length-start;
+      Move(pArr[0], pReq.arr[start], data_leng);
+      pReq.blocks_ok[ind]:=true;
+    end
+    else
+    begin
+      st:='Смещение блока превышает длину персонального сообщения';
+      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+    end;
+  end;
+  for i:=1 to pReq.blockcount-1 do if not pReq.blocks_ok[i] then exit;
+//  if targ_to_ba(target-1, ba) then if Board[ba]<>nil then
+//    Board[ba].
+  GetPersMess(block.mess_cod and $4fff, req_id, pReq.length, @pReq.arr[0]);
+  DeleteRequest(pReq);
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.GetPersMess(mess_cod,req_id: word; length: dword; buf: pointer);
+var i,j, block_length, send_pos, count: integer;
+st: string;
+arr_byte: PArrByte;
+fl: file;
+addr: dword;
+//report: PProgFlashReport;
+DebArrByte: PDebugArrByte;
+DebArrWord: PDebugArrWord;
+DebArrDword: PDebugArrDword;
+begin
+  case mess_cod of
+
+    DEBUG_ARRAY:
+    begin
+        DebArrByte:=buf;
+        DebArrWord:=buf;
+        DebArrDword:=buf;
+        case DebArrByte.type_access of
+          0:
+          begin
+            count:=DebArrByte.leng;
+            addr:=DebArrByte.start_addr;
+            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' байт ---------');
+            st:='';
+            for i:=0 to count-1 do
+            begin
+              if (i mod 32)=0 then
+              begin
+                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrByte.start_addr, 8)+':';
+                inc(addr, 32);
+              end;
+              if (i mod 16)=0 then st:=st+' ';
+              if (i mod 8)=0 then st:=st+' ';
+              st:=st+IntToHex(DebArrByte.arr[i], 2)+' ';
+              if (i mod 32)=31 then
+              begin
+                DebugMemo.Lines.Add(st);
+                st:='';
+              end;
+            end;
+            if st<>'' then DebugMemo.Lines.Add(st);
+          end;
+          1:
+          begin
+            count:=(DebArrWord.leng + 1)div 2;
+            addr:=DebArrWord.start_addr;
+            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' слов ---------');
+            st:='';
+            for i:=0 to count-1 do
+            begin
+              if (i mod 16)=0 then
+              begin
+                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrWord.start_addr, 8)+
+                      ':'+IntToHex((addr-DebArrWord.start_addr)shr 1, 8)+': ';
+                inc(addr, 32);
+              end;
+              if (i mod 8)=0 then st:=st+' ';
+              st:=st+IntToHex(DebArrWord.arr[i], 4)+' ';
+              if (i mod 16)=15 then
+              begin
+                DebugMemo.Lines.Add(st);
+                st:='';
+              end;
+            end;
+            if st<>'' then DebugMemo.Lines.Add(st);
+          end;
+          2:
+          begin
+            count:=(DebArrDword.leng + 3)div 4;
+            addr:=DebArrDword.start_addr;
+            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' двойных слов ---------');
+            st:='';
+            for i:=0 to count-1 do
+            begin
+              if (i mod 8)=0 then
+              begin
+                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrDword.start_addr, 8)+
+                      ':'+IntToHex((addr-DebArrDword.start_addr)shr 2, 8)+':  ';
+                inc(addr, 32);
+              end;
+              st:=st+IntToHex(DebArrDword.arr[i], 8)+' ';
+              if (i mod 8)=7 then
+              begin
+                DebugMemo.Lines.Add(st);
+                st:='';
+              end;
+            end;
+            if st<>'' then DebugMemo.Lines.Add(st);
+
+          end;
+          else
+          begin
+
+          end;
+        end;
+    {    AddLog(CurTimeFine);
+        AddLog('request_id = '+Strg(fHex,req_id,4));
+        AddLog('Получен дамп, размер='+IntToStr(length)+'; ('+IntToStr(length div 192)+' пакетов)');
+        AssignFile(fl, 'buf_dump.mlt');
+        ReWrite(fl, 1);
+        BlockWrite(fl, PArrWord(buf)[0], length);
+        CloseFile(fl);  }
+    end;
+
+
+
+    else
+    begin
+//      if b_d.Log.log_enable then
+      begin
+        DebugMemo.Lines.Add('----------------------------------------------');
+        DebugMemo.Lines.Add(CurTimeFine);
+        DebugMemo.Lines.Add('request_id = '+Strg(fHex,req_id,4));
+        DebugMemo.Lines.Add('Получен неизвеcтный буфер');
+//        DebugMemo.Lines.Add('Target = '+Strg(fHex,targ+1,4));
+        DebugMemo.Lines.Add('Length = '+IntToStr(length div 2)+' слов');
+        DebugMemo.Lines.Add('Command = '+Strg(fHex,mess_cod,4));
+        st:='';
+        for i:=0 to (length div 2)-1 do
+        begin
+          st:=st+Strg(fHex,PArrWord(buf)[i],4)+' ';
+          if (i mod 8) = 7 then begin DebugMemo.Lines.Add(st); st:=''; end;
+        end;
+        if st<>'' then DebugMemo.Lines.Add(st);
+      end;
+    end;
+  end;
+end;
+//------------------------------------------------------------------------------
+
 
 function TVisForm.Strg(format: byte; Value: int64; Digits: integer; DecAllign: boolean = false): string;
 begin

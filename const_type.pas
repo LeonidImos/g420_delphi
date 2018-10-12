@@ -13,6 +13,8 @@ MAX_BOARD_DESCR = 15;
 MAX_BOARD_IN_CON = 8;
 MAX_BOARD_OUT_CON = 8;
 MAX_NUMBER_OF_PROGRAMS = 64; // максимальное количество принимаемых программ
+MAX_LENG_PERS_MESS = 4000000; // максимальный размер в словах персонального сообщения
+MAX_REQUEST_BUF = 20;
 
 MAX_BITRATE_LIST = 32;
 
@@ -37,6 +39,7 @@ G420_MAX_PROG_LIST = 200;
   Comand_Send_Info        = $8002;
 
   DSP_Comand_Get_Array               = $030E;
+  DEBUG_ARRAY       = $430E;
 
 
 // (Target_id=1..4)
@@ -458,6 +461,61 @@ type
   POptionsControl_v3 = ^TOptionsControl_v3;
   TOptionsControl_v3 = array[0..MAX_OPT_ARR-1]of tOptControl_v3;
 
+  PRequest=^TRequest;
+  TRequest=packed record
+    request_id: word;
+    blockcount: dword;
+    blocklength: dword;
+    length: dword;
+    time_live: TDateTime;
+    prev: PRequest;
+    next: PRequest;
+    blocks_ok: array of boolean;
+    arr: array of byte;
+  end;
+
+  PReqBlock=^TReqBlock;
+  TReqBlock=packed record
+    mess_cod: word;
+    req_id: word;
+    param: word;
+    arr: array[0..$1ffff]of byte;
+  end;
+
+  PReqBlockLong=^TReqBlockLong;
+  TReqBlockLong=packed record
+    mess_cod: word;
+    req_id: word;
+    param: dword;
+    arr: array[0..$1fffffff]of byte;
+  end;
+
+  PDebugArrByte = ^TDebugArrByte;
+  TDebugArrByte = packed record
+    type_access: word;
+    port: word;
+    start_addr: dword;
+    leng: dword;
+    arr: array[0..$1000000]of byte;
+  end;
+
+  PDebugArrWord = ^TDebugArrWord;
+  TDebugArrWord = packed record
+    type_access: word;
+    port: word;
+    start_addr: dword;
+    leng: dword;
+    arr: array[0..$1000000]of word;
+  end;
+
+  PDebugArrDWord = ^TDebugArrDWord;
+  TDebugArrDWord = packed record
+    type_access: word;
+    port: word;
+    start_addr: dword;
+    leng: dword;
+    arr: array[0..$1000000]of dword;
+  end;
 
 implementation
 
