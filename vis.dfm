@@ -3,7 +3,7 @@ object VisForm: TVisForm
   Top = 0
   Caption = #1055#1088#1086#1075#1088#1072#1084#1084#1080#1088#1086#1074#1072#1085#1080#1077' '#1075#1077#1085#1077#1088#1072#1090#1086#1088#1072' '#1043'-420'
   ClientHeight = 605
-  ClientWidth = 976
+  ClientWidth = 1075
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,7 +18,7 @@ object VisForm: TVisForm
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel
-    Left = 584
+    Left = 683
     Top = 0
     Width = 392
     Height = 605
@@ -546,7 +546,7 @@ object VisForm: TVisForm
   object PageControl2: TPageControl
     Left = 0
     Top = 0
-    Width = 584
+    Width = 683
     Height = 605
     Align = alClient
     TabOrder = 1
@@ -554,105 +554,26 @@ object VisForm: TVisForm
   object Panel2: TPanel
     Left = 0
     Top = 0
-    Width = 584
+    Width = 683
     Height = 605
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
-    object Panel3: TPanel
-      Left = 0
-      Top = 0
-      Width = 584
-      Height = 73
-      Align = alTop
-      BevelOuter = bvNone
-      TabOrder = 0
-      object MemoClearButton: TButton
-        Left = 12
-        Top = 12
-        Width = 85
-        Height = 25
-        Caption = #1054#1095#1080#1089#1090#1080#1090#1100
-        TabOrder = 0
-        OnClick = MemoClearButtonClick
-      end
-      object MemoCopyButton: TButton
-        Left = 112
-        Top = 12
-        Width = 85
-        Height = 25
-        Caption = #1050#1086#1087#1080#1088#1086#1074#1072#1090#1100
-        TabOrder = 1
-        OnClick = MemoCopyButtonClick
-      end
-      object DeviceErrorChB: TCheckBox
-        Left = 212
-        Top = 16
-        Width = 97
-        Height = 17
-        Caption = 'Device Error'
-        TabOrder = 2
-        Visible = False
-      end
-      object Edit1: TEdit
-        Left = 12
-        Top = 46
-        Width = 182
-        Height = 21
-        TabOrder = 3
-      end
-      object Button9: TButton
-        Left = 212
-        Top = 44
-        Width = 75
-        Height = 25
-        Caption = #1057#1090#1088#1086#1082#1072
-        TabOrder = 4
-        OnClick = Button9Click
-      end
-      object Button2: TButton
-        Left = 308
-        Top = 12
-        Width = 75
-        Height = 25
-        Caption = '101'
-        TabOrder = 5
-        OnClick = Button2Click
-      end
-      object Button3: TButton
-        Left = 389
-        Top = 12
-        Width = 75
-        Height = 25
-        Caption = '102'
-        TabOrder = 6
-        OnClick = Button3Click
-      end
-      object Button4: TButton
-        Left = 470
-        Top = 12
-        Width = 75
-        Height = 25
-        Caption = '103'
-        TabOrder = 7
-        OnClick = Button4Click
-      end
-    end
     object PageControl: TPageControl
       Left = 0
-      Top = 73
-      Width = 584
-      Height = 532
+      Top = 0
+      Width = 683
+      Height = 605
       ActivePage = TabSheet4
       Align = alClient
-      TabOrder = 1
+      TabOrder = 0
       object TabSheet3: TTabSheet
         Caption = #1086#1073#1097#1080#1081' '#1083#1086#1075
         object Memo1: TMemo
           Left = 0
-          Top = 0
-          Width = 576
-          Height = 504
+          Top = 81
+          Width = 675
+          Height = 496
           Align = alClient
           Font.Charset = RUSSIAN_CHARSET
           Font.Color = clWindowText
@@ -663,15 +584,85 @@ object VisForm: TVisForm
           ScrollBars = ssVertical
           TabOrder = 0
         end
+        object Panel7: TPanel
+          Left = 0
+          Top = 0
+          Width = 675
+          Height = 81
+          Align = alTop
+          BevelOuter = bvNone
+          TabOrder = 1
+          object MemoClearButton: TButton
+            Left = 12
+            Top = 12
+            Width = 85
+            Height = 25
+            Caption = #1054#1095#1080#1089#1090#1080#1090#1100
+            TabOrder = 0
+            OnClick = MemoClearButtonClick
+          end
+          object MemoCopyButton: TButton
+            Left = 112
+            Top = 12
+            Width = 85
+            Height = 25
+            Caption = #1050#1086#1087#1080#1088#1086#1074#1072#1090#1100
+            TabOrder = 1
+            OnClick = MemoCopyButtonClick
+          end
+          object Edit1: TEdit
+            Left = 12
+            Top = 46
+            Width = 182
+            Height = 21
+            TabOrder = 2
+          end
+          object Button9: TButton
+            Left = 212
+            Top = 44
+            Width = 75
+            Height = 25
+            Caption = #1057#1090#1088#1086#1082#1072
+            TabOrder = 3
+            OnClick = Button9Click
+          end
+          object DeviceErrorChB: TCheckBox
+            Left = 212
+            Top = 16
+            Width = 97
+            Height = 17
+            Caption = 'Device Error'
+            TabOrder = 4
+            Visible = False
+          end
+          object Button3: TButton
+            Left = 389
+            Top = 12
+            Width = 75
+            Height = 25
+            Caption = '101'
+            TabOrder = 5
+            OnClick = Button3Click
+          end
+        end
       end
       object TabSheet4: TTabSheet
         Caption = #1086#1090#1083#1072#1076#1082#1072
         ImageIndex = 1
+        object Splitter1: TSplitter
+          Left = 0
+          Top = 220
+          Width = 675
+          Height = 6
+          Cursor = crVSplit
+          Align = alTop
+          ExplicitTop = 277
+        end
         object DebugMemo: TMemo
           Left = 0
-          Top = 0
-          Width = 576
-          Height = 504
+          Top = 226
+          Width = 675
+          Height = 351
           Align = alClient
           Font.Charset = RUSSIAN_CHARSET
           Font.Color = clBlack
@@ -682,19 +673,410 @@ object VisForm: TVisForm
           ScrollBars = ssBoth
           TabOrder = 0
         end
+        object DebugHeaderPanel: TPanel
+          Left = 0
+          Top = 0
+          Width = 675
+          Height = 220
+          Align = alTop
+          BevelOuter = bvNone
+          Constraints.MinHeight = 220
+          TabOrder = 1
+          object Splitter2: TSplitter
+            Left = 200
+            Top = 0
+            Width = 6
+            Height = 220
+            ExplicitLeft = 197
+            ExplicitHeight = 277
+          end
+          object AddrListPanel: TPanel
+            Left = 0
+            Top = 0
+            Width = 200
+            Height = 220
+            Align = alLeft
+            BevelOuter = bvNone
+            Constraints.MinWidth = 200
+            TabOrder = 0
+            object Panel8: TPanel
+              Left = 0
+              Top = 0
+              Width = 200
+              Height = 83
+              Align = alTop
+              BevelOuter = bvNone
+              TabOrder = 0
+              object Button7: TButton
+                Left = 6
+                Top = 8
+                Width = 63
+                Height = 20
+                Caption = #1076#1086#1073#1072#1074#1080#1090#1100
+                TabOrder = 0
+                OnClick = Button7Click
+              end
+              object Button8: TButton
+                Left = 6
+                Top = 57
+                Width = 63
+                Height = 20
+                Caption = #1091#1076#1072#1083#1080#1090#1100
+                TabOrder = 1
+              end
+              object Button10: TButton
+                Left = 77
+                Top = 8
+                Width = 117
+                Height = 20
+                Caption = #1074#1079#1103#1090#1100
+                TabOrder = 2
+                OnClick = Button10Click
+              end
+              object Button11: TButton
+                Left = 6
+                Top = 31
+                Width = 63
+                Height = 20
+                Caption = #1080#1079#1084#1077#1085#1080#1090#1100
+                TabOrder = 3
+              end
+              object ReadDumpListButton: TButton
+                Left = 77
+                Top = 34
+                Width = 117
+                Height = 20
+                Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1076#1072#1084#1087
+                TabOrder = 4
+                OnClick = ReadDumpButtonClick
+              end
+              object Button13: TButton
+                Left = 77
+                Top = 57
+                Width = 117
+                Height = 20
+                Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1089#1090#1088#1091#1082#1082#1090'.'
+                TabOrder = 5
+              end
+            end
+            object AddrListBox: TListBox
+              Left = 0
+              Top = 83
+              Width = 200
+              Height = 137
+              Align = alClient
+              ItemHeight = 13
+              TabOrder = 1
+            end
+          end
+          object Panel9: TPanel
+            Left = 206
+            Top = 0
+            Width = 469
+            Height = 220
+            Align = alClient
+            BevelInner = bvLowered
+            TabOrder = 1
+            object Label5: TLabel
+              Left = 236
+              Top = 43
+              Width = 29
+              Height = 13
+              Caption = #1086#1090'/'#1076#1086
+            end
+            object Label4: TLabel
+              Left = 138
+              Top = 43
+              Width = 83
+              Height = 13
+              Caption = #1088#1072#1079#1084#1077#1088'.'#1101#1083'/'#1095#1080#1089#1083#1086
+            end
+            object Label3: TLabel
+              Left = 62
+              Top = 43
+              Width = 53
+              Height = 13
+              Caption = #1048#1084#1103'/'#1072#1076#1088#1077#1089
+            end
+            object EditStructSB1: TSpeedButton
+              Left = 189
+              Top = 82
+              Width = 20
+              Height = 20
+              Caption = '...'
+            end
+            object EditStructSB2: TSpeedButton
+              Left = 189
+              Top = 134
+              Width = 20
+              Height = 20
+              Caption = '...'
+            end
+            object EditStructSB3: TSpeedButton
+              Left = 189
+              Top = 188
+              Width = 20
+              Height = 20
+              Caption = '...'
+            end
+            object NameEdit1: TEdit
+              Left = 47
+              Top = 62
+              Width = 98
+              Height = 21
+              TabOrder = 0
+            end
+            object RadioButton3: TRadioButton
+              Left = 17
+              Top = 180
+              Width = 28
+              Height = 17
+              Caption = '3'
+              TabOrder = 1
+            end
+            object RadioButton2: TRadioButton
+              Left = 17
+              Top = 128
+              Width = 28
+              Height = 17
+              Caption = '2'
+              TabOrder = 2
+            end
+            object RadioButton1: TRadioButton
+              Left = 17
+              Top = 75
+              Width = 28
+              Height = 17
+              Caption = '1'
+              Checked = True
+              TabOrder = 3
+              TabStop = True
+            end
+            object ToEdit1: TEdit
+              Left = 215
+              Top = 82
+              Width = 53
+              Height = 21
+              TabOrder = 4
+            end
+            object FromEdit1: TEdit
+              Left = 215
+              Top = 62
+              Width = 53
+              Height = 21
+              TabOrder = 5
+            end
+            object CountEdit1: TEdit
+              Left = 151
+              Top = 82
+              Width = 38
+              Height = 21
+              TabOrder = 6
+            end
+            object SizeEdit1: TEdit
+              Left = 151
+              Top = 62
+              Width = 58
+              Height = 21
+              TabOrder = 7
+            end
+            object AddrEdit1: TEdit
+              Left = 47
+              Top = 82
+              Width = 98
+              Height = 21
+              TabOrder = 8
+            end
+            object Button4: TButton
+              Left = 330
+              Top = 8
+              Width = 75
+              Height = 25
+              Caption = '103'
+              TabOrder = 9
+              OnClick = Button4Click
+            end
+            object Button2: TButton
+              Left = 249
+              Top = 8
+              Width = 75
+              Height = 25
+              Caption = '102'
+              TabOrder = 10
+              OnClick = Button2Click
+            end
+            object Button5: TButton
+              Left = 113
+              Top = 8
+              Width = 85
+              Height = 25
+              Caption = #1050#1086#1087#1080#1088#1086#1074#1072#1090#1100
+              TabOrder = 11
+              OnClick = MemoCopyButtonClick
+            end
+            object Button6: TButton
+              Left = 22
+              Top = 8
+              Width = 85
+              Height = 25
+              Caption = #1054#1095#1080#1089#1090#1080#1090#1100
+              TabOrder = 12
+              OnClick = MemoClearButtonClick
+            end
+            object ReadDumpButton1: TButton
+              Left = 280
+              Top = 63
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1076#1072#1084#1087
+              TabOrder = 13
+              OnClick = ReadDumpButtonClick
+            end
+            object ReadStructButton1: TButton
+              Left = 280
+              Top = 82
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1089#1090#1088#1091#1082#1082#1090'.'
+              TabOrder = 14
+            end
+            object NameEdit2: TEdit
+              Left = 47
+              Top = 114
+              Width = 98
+              Height = 21
+              TabOrder = 15
+            end
+            object AddrEdit2: TEdit
+              Left = 47
+              Top = 134
+              Width = 98
+              Height = 21
+              TabOrder = 16
+            end
+            object SizeEdit2: TEdit
+              Left = 151
+              Top = 114
+              Width = 58
+              Height = 21
+              TabOrder = 17
+            end
+            object CountEdit2: TEdit
+              Left = 151
+              Top = 134
+              Width = 38
+              Height = 21
+              TabOrder = 18
+            end
+            object FromEdit2: TEdit
+              Left = 215
+              Top = 114
+              Width = 53
+              Height = 21
+              TabOrder = 19
+            end
+            object ToEdit2: TEdit
+              Left = 215
+              Top = 134
+              Width = 53
+              Height = 21
+              TabOrder = 20
+            end
+            object ReadDumpButton2: TButton
+              Tag = 1
+              Left = 280
+              Top = 115
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1076#1072#1084#1087
+              TabOrder = 21
+              OnClick = ReadDumpButtonClick
+            end
+            object ReadStructButton2: TButton
+              Tag = 1
+              Left = 280
+              Top = 134
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1089#1090#1088#1091#1082#1082#1090'.'
+              TabOrder = 22
+            end
+            object NameEdit3: TEdit
+              Left = 47
+              Top = 168
+              Width = 98
+              Height = 21
+              TabOrder = 23
+            end
+            object AddrEdit3: TEdit
+              Left = 47
+              Top = 188
+              Width = 98
+              Height = 21
+              TabOrder = 24
+            end
+            object SizeEdit3: TEdit
+              Left = 151
+              Top = 168
+              Width = 58
+              Height = 21
+              TabOrder = 25
+            end
+            object CountEdit3: TEdit
+              Left = 151
+              Top = 188
+              Width = 38
+              Height = 21
+              TabOrder = 26
+            end
+            object FromEdit3: TEdit
+              Left = 215
+              Top = 168
+              Width = 53
+              Height = 21
+              TabOrder = 27
+            end
+            object ToEdit3: TEdit
+              Left = 215
+              Top = 188
+              Width = 53
+              Height = 21
+              TabOrder = 28
+            end
+            object ReadDumpButton3: TButton
+              Tag = 2
+              Left = 280
+              Top = 169
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1076#1072#1084#1087
+              TabOrder = 29
+              OnClick = ReadDumpButtonClick
+            end
+            object ReadStructButton3: TButton
+              Tag = 2
+              Left = 280
+              Top = 188
+              Width = 117
+              Height = 20
+              Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1089#1090#1088#1091#1082#1082#1090'.'
+              TabOrder = 30
+            end
+          end
+        end
       end
     end
   end
   object g420OpenDialog: TOpenDialog
     FilterIndex = 0
-    Left = 240
-    Top = 76
+    Left = 388
+    Top = 372
   end
   object ImageList1: TImageList
-    Left = 336
-    Top = 80
+    Left = 460
+    Top = 368
     Bitmap = {
-      494C010102000800A80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800B80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -835,7 +1217,7 @@ object VisForm: TVisForm
   end
   object SaveDialog: TSaveDialog
     Filter = #1060#1072#1081#1083#1099' '#1089#1087#1080#1089#1082#1072' '#1089#1080#1075#1085#1072#1083#1086#1074'(*.lst)|*.lst|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.*'
-    Left = 424
-    Top = 64
+    Left = 528
+    Top = 372
   end
 end

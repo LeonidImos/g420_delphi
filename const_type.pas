@@ -108,6 +108,20 @@ G420_MAX_PROG_LIST = 200;
   ItemFileTime_prexix = 'FileTime_';
   ItemFileCheckSum_prexix = 'FileCheckSum_';
 
+  DebugSection = 'Debug';
+  ItemCurEdit = 'CurrentEdit';
+  ItemSplitHeight = 'SplitHeight';
+  ItemSplitWidth = 'SplitWidth';
+  ItemVarsCount = 'VarsCount';
+  ItemVarPref = 'Var_';
+  ItemEditPref = 'Edit_';
+  ItemVarName = '_Name';
+  ItemVarAddr = '_Address';
+  ItemVarSizeEl = '_SizeElement';
+  ItemVarCountEl = '_CountElements';
+  ItemVarFrom = '_FromIndex';
+  ItemVarTo = '_ToIndex';
+
 
 IN_EXCL_MODE_DISABLE = 0;
 IN_EXCL_MODE_IP      = 1;
@@ -516,6 +530,24 @@ type
     leng: dword;
     arr: array[0..$1000000]of dword;
   end;
+
+  TAddressStruct = record
+    name: string;
+    addr: dword;
+    el_size: dword;
+    el_count: dword;
+    from_ind: dword;
+    to_ind: dword;
+  end;
+
+  TDSPCommand = packed record
+    play_state: byte;
+    play_mode: byte;
+    command: word;
+    length: word;
+    param: array[0..16]of word;
+  end;
+
 
 implementation
 

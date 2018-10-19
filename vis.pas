@@ -67,20 +67,68 @@ type
     Button1: TButton;
     PageControl2: TPageControl;
     Panel2: TPanel;
-    Panel3: TPanel;
-    MemoClearButton: TButton;
-    MemoCopyButton: TButton;
-    DeviceErrorChB: TCheckBox;
-    Edit1: TEdit;
-    Button9: TButton;
-    Button2: TButton;
-    Button3: TButton;
     PageControl: TPageControl;
     TabSheet3: TTabSheet;
     Memo1: TMemo;
     TabSheet4: TTabSheet;
     DebugMemo: TMemo;
+    DebugHeaderPanel: TPanel;
+    Splitter1: TSplitter;
+    Panel7: TPanel;
+    MemoClearButton: TButton;
+    MemoCopyButton: TButton;
+    Edit1: TEdit;
+    Button9: TButton;
+    DeviceErrorChB: TCheckBox;
+    Button3: TButton;
+    AddrListPanel: TPanel;
+    Panel8: TPanel;
+    Button7: TButton;
+    Button8: TButton;
+    AddrListBox: TListBox;
+    Splitter2: TSplitter;
+    Panel9: TPanel;
+    NameEdit1: TEdit;
+    RadioButton3: TRadioButton;
+    RadioButton2: TRadioButton;
+    RadioButton1: TRadioButton;
+    ToEdit1: TEdit;
+    FromEdit1: TEdit;
+    CountEdit1: TEdit;
+    SizeEdit1: TEdit;
+    AddrEdit1: TEdit;
+    Label5: TLabel;
+    Label4: TLabel;
+    Label3: TLabel;
     Button4: TButton;
+    Button2: TButton;
+    Button5: TButton;
+    Button6: TButton;
+    EditStructSB1: TSpeedButton;
+    Button10: TButton;
+    ReadDumpButton1: TButton;
+    ReadStructButton1: TButton;
+    NameEdit2: TEdit;
+    AddrEdit2: TEdit;
+    SizeEdit2: TEdit;
+    CountEdit2: TEdit;
+    FromEdit2: TEdit;
+    ToEdit2: TEdit;
+    EditStructSB2: TSpeedButton;
+    ReadDumpButton2: TButton;
+    ReadStructButton2: TButton;
+    NameEdit3: TEdit;
+    AddrEdit3: TEdit;
+    SizeEdit3: TEdit;
+    CountEdit3: TEdit;
+    FromEdit3: TEdit;
+    ToEdit3: TEdit;
+    EditStructSB3: TSpeedButton;
+    ReadDumpButton3: TButton;
+    ReadStructButton3: TButton;
+    Button11: TButton;
+    ReadDumpListButton: TButton;
+    Button13: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -114,6 +162,9 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure ReadDumpButtonClick(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -140,6 +191,16 @@ type
     ProgListCount: integer;
     request_id: word;
     StartRequest: PRequest;
+    NameEdit: array[0..2]of TEdit;
+    AddrEdit: array[0..2]of TEdit;
+    SizeEdit: array[0..2]of TEdit;
+    CountEdit: array[0..2]of TEdit;
+    FromEdit: array[0..2]of TEdit;
+    ToEdit: array[0..2]of TEdit;
+    EditStructSB: array[0..2]of TSpeedButton;
+    ReadDumpButton: array[0..2]of TButton;
+    ReadStructButton: array[0..2]of TButton;
+    AddrList: array of TAddressStruct;
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     function EventConnect(CurTime: TDateTime): boolean;
     function EventSendTimer(CurTime: TDateTime): boolean;
@@ -186,6 +247,11 @@ type
     procedure g420_TestTime(t: TDateTime);
     procedure ShowSignalList;
     function PrepareListSignal: integer;
+    function TestHex(val: string; force_hex: boolean):string;
+    function GetHexValue(edit: TEdit; var value: dword; force_hex: boolean): boolean;
+    function GetAddrFromInterface(var addr: TAddressStruct; edit_ind: integer): boolean;
+    procedure AddAddrStruct(addr: TAddressStruct);
+    procedure GetAddrToEdit(addr: TAddressStruct; edit_ind: integer);
   public
     { Public declarations }
   end;
@@ -211,10 +277,38 @@ begin
   CurDir:=GetCurrentDir;
   CurIniFileName:=CurDir+'\g420_prog.ini';
   first_show:=true;
-  LoadFromFile;
   Application.OnIdle:=ApplicationIdle;
   ProgListCount:=0;
   request_id:=1;
+  NameEdit[0]:=NameEdit1;
+  AddrEdit[0]:=AddrEdit1;
+  SizeEdit[0]:=SizeEdit1;
+  CountEdit[0]:=CountEdit1;
+  FromEdit[0]:=FromEdit1;
+  ToEdit[0]:=ToEdit1;
+  EditStructSB[0]:=EditStructSB1;
+  ReadDumpButton[0]:=ReadDumpButton1;
+  ReadStructButton[0]:=ReadStructButton1;
+  NameEdit[1]:=NameEdit2;
+  AddrEdit[1]:=AddrEdit2;
+  SizeEdit[1]:=SizeEdit2;
+  CountEdit[1]:=CountEdit2;
+  FromEdit[1]:=FromEdit2;
+  ToEdit[1]:=ToEdit2;
+  EditStructSB[1]:=EditStructSB2;
+  ReadDumpButton[1]:=ReadDumpButton2;
+  ReadStructButton[1]:=ReadStructButton2;
+  NameEdit[2]:=NameEdit3;
+  AddrEdit[2]:=AddrEdit3;
+  SizeEdit[2]:=SizeEdit3;
+  CountEdit[2]:=CountEdit3;
+  FromEdit[2]:=FromEdit3;
+  ToEdit[2]:=ToEdit3;
+  EditStructSB[2]:=EditStructSB3;
+  ReadDumpButton[2]:=ReadDumpButton3;
+  ReadStructButton[2]:=ReadStructButton3;
+  LoadFromFile;
+
 end;
 //------------------------------------------------------------------------------
 procedure TVisForm.FormDestroy(Sender: TObject);
@@ -542,6 +636,22 @@ begin
 end;
 //------------------------------------------------------------------------------
 
+procedure TVisForm.Button10Click(Sender: TObject);
+var ind, lind: integer;
+begin
+  if RadioButton2.Checked then ind:=1
+  else if RadioButton3.Checked then ind:=2
+  else ind:=0;
+
+  lind:=AddrListBox.ItemIndex;
+  if (lind>=0)and(lind<AddrListBox.Count) then
+  begin
+    if lind<length(AddrList) then
+      GetAddrToEdit(AddrList[lind], ind);
+  end;
+end;
+//------------------------------------------------------------------------------
+
 procedure TVisForm.Button1Click(Sender: TObject);
 var sig_count, list_count, i: integer;
 sig_id: dword;
@@ -599,6 +709,48 @@ begin
   SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button7Click(Sender: TObject);
+var addr: TAddressStruct;
+ind: integer;
+begin
+  if RadioButton2.Checked then ind:=1
+  else if RadioButton3.Checked then ind:=2
+  else ind:=0;
+
+  if GetAddrFromInterface(addr, ind) then
+  begin
+    AddAddrStruct(addr);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+procedure TVisForm.GetAddrToEdit(addr: TAddressStruct; edit_ind: integer);
+begin
+  if edit_ind<0 then exit;
+  if edit_ind>2 then exit;
+
+  NameEdit[edit_ind].Text:=addr.name;
+  AddrEdit[edit_ind].Text:=IntToHex(addr.addr, 8);
+  SizeEdit[edit_ind].Text:=IntToStr(addr.el_size);
+  CountEdit[edit_ind].Text:=IntToStr(addr.el_count);
+  FromEdit[edit_ind].Text:=IntToStr(addr.from_ind);
+  ToEdit[edit_ind].Text:=IntToStr(addr.to_ind);
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.AddAddrStruct(addr: TAddressStruct);
+var ind, count: integer;
+begin
+  ind:=AddrListBox.Count;
+  count:=ind+1;
+  if Length(AddrList)<count then
+    SetLength(AddrList, count+20);
+  AddrList[ind]:=addr;
+  AddrListBox.Items.Add(addr.name);
+
+end;
 //------------------------------------------------------------------------------
 
 procedure TVisForm.Button9Click(Sender: TObject);
@@ -1054,20 +1206,28 @@ end;
 //------------------------------------------------------------------------------
 function TVisForm.SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word;
 var i: integer;
-params: array[0..MAX_OUT_MESS_PARAM+4-1]of word;
+//params: array[0..MAX_OUT_MESS_PARAM+4-1]of word;
+params: TDSPCommand;
 begin
   if req_id_force=$ffff then
   begin
     inc(request_id); if request_id>$ff00 then request_id:=0;
     req_id_force:=request_id;
   end;
-  if count>MAX_OUT_MESS_PARAM then count:=MAX_OUT_MESS_PARAM;
+  if count>16 then count:=16;
 
-  params[0]:=$55aa; params[1]:=comand; params[2]:=count+1 ;
+{  params[0]:=$55aa; params[1]:=comand; params[2]:=count+1 ;
   params[3]:=req_id_force;
-  for i:=0 to count-1 do params[i+4]:=P_param[i];
+  for i:=0 to count-1 do params[i+4]:=P_param[i]; }
+  params.play_state:=100;
+  params.play_mode:=0;
+  params.command:=comand;
+  params.length:=count+1;
+  params.param[0]:=req_id_force;
+  for i:=0 to count-1 do params.param[i+1]:=P_param[i];
 
-  SendCommand(target_id, Comand_Send_Info, count+4, @params);
+//  SendCommand(target_id, Comand_Send_Info, count+4, @params);
+  SendCommand(target_id, Comand_g420_SetPlayMode, count+4, @params);
   result:=request_id;
 end;
 //------------------------------------------------------------------------------
@@ -1108,6 +1268,55 @@ begin
   if count>2 then count:=2;
   params[0]:=param1; params[1]:=param2;
   result:=SendCommandDSP(target_id, comand, count, @params);
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.ReadDumpButtonClick(Sender: TObject);
+var addr: TAddressStruct;
+ind, i: integer;
+type_access, port: word;
+leng: dword;
+// param[0] - request_id, param[1] - type_access (0-byte;1-word;2-dword),
+// param[2]-port(кто запросил), param[3] - start_addr(lo), param[4] - start_addr(hi);
+// param[5] - length(lo)(в байтах), param[6] - length(hi)(в байтах);
+params: array[1..16] of word;
+send_en: boolean;
+begin
+  if Sender=ReadDumpListButton then // запрос прямо по списку
+  begin
+    ind:=AddrListBox.ItemIndex;
+    send_en:=(ind>=0)and(ind<AddrListBox.Count)and(ind<length(AddrList));
+    if send_en then
+    begin
+      addr:=AddrList[ind];
+      port:=ind;
+    end;
+  end
+  else   // запрос по полям edit
+  begin
+    ind:=TButton(Sender).Tag;
+    port:=$ffff-ind;
+    send_en:=GetAddrFromInterface(addr, ind);
+  end;
+
+  // формируем и отправляем запрос
+  if send_en then
+  begin
+    if ((addr.addr mod 4)=0)and((addr.el_size mod 4)=0) then type_access:=2
+    else if ((addr.addr mod 2)=0)and((addr.el_size mod 2)=0) then type_access:=1
+    else type_access:=0;
+
+    params[1]:=type_access;
+    params[2]:=port;
+    params[3]:=addr.addr and $ffff;
+    params[4]:=(addr.addr shr 16) and $ffff;
+    leng:=addr.el_size*addr.el_count;
+    params[5]:=leng and $ffff;
+    params[6]:=(leng shr 16) and $ffff;
+    for i:=7 to 16 do params[i]:=0;
+
+    SendCommandDSP(0, DSP_Comand_Get_Array, 6, @params);
+  end;
 end;
 //------------------------------------------------------------------------------
 
@@ -1901,7 +2110,7 @@ end;
 //------------------------------------------------------------------------------
 procedure TVisForm.SaveToFile;
 var ini: TIniFile;
-ind: integer;
+ind, count: integer;
 //Pass: string;
 //f, band, plp: dword;
 SaveWinLeft,SaveWinTop,SaveWinWidth,SaveWinHeight: integer;
@@ -1968,6 +2177,37 @@ begin
     ini.WriteInteger(g420Section, ItemFileCheckSum_prexix+IntToStr(ind), FileCheckSum[ind]);
   end;
 
+  // ------------------ debug -----------------------
+  if RadioButton2.Checked then ind:=1
+  else if RadioButton3.Checked then ind:=2
+  else ind:=0;
+  ini.WriteInteger(DebugSection, ItemCurEdit, ind);
+  ini.WriteInteger(DebugSection, ItemSplitHeight, DebugHeaderPanel.Height);
+  ini.WriteInteger(DebugSection, ItemSplitWidth, AddrListPanel.Width);
+  count:=AddrListBox.Count;
+  if count>length(AddrList)then count:=length(AddrList);
+  ini.WriteInteger(DebugSection, ItemVarsCount, count);
+
+  for ind:=0 to count-1 do
+  begin
+    ini.WriteString(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarName, AddrList[ind].name);
+    ini.WriteInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarAddr, AddrList[ind].addr);
+    ini.WriteInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarSizeEl, AddrList[ind].el_size);
+    ini.WriteInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarCountEl, AddrList[ind].el_count);
+    ini.WriteInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarFrom, AddrList[ind].from_ind);
+    ini.WriteInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarTo, AddrList[ind].to_ind);
+  end;
+
+  for ind:=0 to 2 do
+  begin
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarName, NameEdit[ind].Text);
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarAddr, AddrEdit[ind].Text);
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarSizeEl, SizeEdit[ind].Text);
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarCountEl, CountEdit[ind].Text);
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarFrom, FromEdit[ind].Text);
+    ini.WriteString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarTo, ToEdit[ind].Text);
+  end;
+
   ini.Destroy;
 end;
 //------------------------------------------------------------------------------
@@ -1987,6 +2227,80 @@ begin
   ini.Destroy;
 end;
 //------------------------------------------------------------------------------
+procedure TVisForm.LoadFromFile;
+var ini: TIniFile;
+ind, count: integer;
+addr_temp: TAddressStruct;
+begin
+  ini:=TIniFile.Create(CurIniFileName);
+
+  // ---------- HostsSection ------------
+  ConnectEdit.Text:=ini.ReadString(HostsSection,ItemHost,'192.168.111.241');
+
+
+  // ---------------- MainSection ---------------------
+//  if ini.ReadBool(MainSection,ItemShowHex,true)then HexMode:=fHex else HexMode:=fDec;
+  DeviceErrorChB.Checked:=ini.ReadBool(MainSection, ItemDeviceError, true);
+
+  // ------------- g420 --------------
+  g420_filename_dsp11_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP11,'');
+  g420_filename_dsp12_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP12,'');
+  g420_filename_dsp21_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP21,'');
+  g420_filename_sd1_edit.Text:=ini.ReadString(g420Section, ItemG420_SD1,'');
+  ind:=ini.ReadInteger(g420Section,ItemG420_SendBlocks,5);
+  if (ind<g420_blockCount_SpinEdit.MinValue)or(ind>g420_blockCount_SpinEdit.MaxValue) then ind:=5;
+  g420_blockCount_SpinEdit.Value:=ind;
+  g420_StartAddrEdit.Text:=ini.ReadString(g420Section, ItemG420_StartAddr,'0');
+  IncrChB.Checked:=ini.ReadBool(g420Section,ItemG420_Increment,false);
+  ind:=ini.ReadInteger(g420Section,ItemG420_SD_use,0);
+  if (ind<0)or(ind>=g420_sd_CbB.Items.Count) then ind:=0;
+  g420_sd_CbB.ItemIndex:=ind;
+  ind:=ini.ReadInteger(g420Section,ItemG420_PlayMode,0);
+  if (ind<0)or(ind>=g420_playModeCbB.Items.Count) then ind:=0;
+  g420_playModeCbB.ItemIndex:=ind;
+  g420_bitrateEdit.Text:=ini.ReadString(g420Section, ItemG420_BitRateIn,'2049952');
+  g420_bitrateOutEdit.Text:=ini.ReadString(g420Section, ItemG420_BitRateOut,'2049952');
+  for ind:=0 to 3 do
+  begin
+    FileTime[ind]:=ini.ReadInteger(g420Section, ItemFileTime_prexix+IntToStr(ind), 0);
+    FileCheckSum[ind]:=ini.ReadInteger(g420Section, ItemFileCheckSum_prexix+IntToStr(ind), $ff);
+  end;
+
+  // ------------------ debug -----------------------
+  ind:=ini.ReadInteger(DebugSection, ItemCurEdit, 0);
+  if ind=1 then RadioButton2.Checked:=true
+  else if ind=2 then RadioButton3.Checked:=true
+  else RadioButton1.Checked:=true;
+
+  DebugHeaderPanel.Height:=ini.ReadInteger(DebugSection, ItemSplitHeight, 220);
+  AddrListPanel.Width:=ini.ReadInteger(DebugSection, ItemSplitWidth, 200);
+  count:=ini.ReadInteger(DebugSection, ItemVarsCount, 0);
+
+  for ind:=0 to count-1 do
+  begin
+    addr_temp.name:=ini.ReadString(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarName, 'Var_'+IntToStr(ind));
+    addr_temp.addr:=ini.ReadInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarAddr, 0);
+    addr_temp.el_size:=ini.ReadInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarSizeEl, 1);
+    addr_temp.el_count:=ini.ReadInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarCountEl, 1);
+    addr_temp.from_ind:=ini.ReadInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarFrom, 0);
+    addr_temp.to_ind:=ini.ReadInteger(DebugSection,ItemVarPref+IntToStr(ind)+ItemVarTo, addr_temp.el_count-1);
+    AddAddrStruct(addr_temp);
+  end;
+
+  for ind:=0 to 2 do
+  begin
+    NameEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarName, 'Edit_'+IntToStr(ind+1));
+    AddrEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarAddr, '0');
+    SizeEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarSizeEl, '1');
+    CountEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarCountEl, '1');
+    FromEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarFrom, '0');
+    ToEdit[ind].Text:=ini.ReadString(DebugSection,ItemEditPref+IntToStr(ind+1)+ItemVarTo, '0');
+  end;
+
+  ini.Destroy;
+end;
+//------------------------------------------------------------------------------
+
 function TVisForm.PrepareListSignal: integer;
 var i, j, ostat: integer;
 is_mpeg: boolean;
@@ -2212,133 +2526,6 @@ begin
 end;
 //------------------------------------------------------------------------------
 
-procedure TVisForm.LoadFromFile;
-var ini: TIniFile;
-ind: integer;
-//AnalisStart: integer;
-//Pass,host,port: string;
-//atpPass: TPass_uni;
-//remote_on: boolean;
-//remote: TRemote;
-{targ,AnalisMode,InputState,ind: integer;
-found,ConState,RemoteMode: boolean;
-CB: TCheckBox;
-f, band, plp: dword;
-pid: word;  }
-//^^^^^^^^^^^^^^^^^
-//^^^^^^^^^^^^^^^^^
-begin
-  ini:=TIniFile.Create(CurIniFileName);
-
-  // ---------- HostsSection ------------
-//  LoadCombo(ini, SettingForm.IPadrCB, HostsSection, ItemHost);
-  ConnectEdit.Text:=ini.ReadString(HostsSection,ItemHost,'192.168.111.241');
-//  SettingForm.UpDateCombo(SettingForm.IPadrCB,host);
-//  LoadCombo(ini, SettingForm.PortCB, HostsSection, ItemPort);
-//  port:=ini.ReadString(HostsSection,ItemPort,'2028');
-//  SettingForm.UpDateCombo(SettingForm.PortCB,port);
-//  ATPObj.SetSocketParam(host, port);
-
-  // ------------- ServerSection -------------------
-
-//  LoadCombo(ini, SettingForm.ServerNameCB, ServerSection, ItemServerHost);
-//  LoadCombo(ini, SettingForm.ServerPortCB, ServerSection, ItemServerPort);
-
-  // ---------------- MainSection ---------------------
-//  if ini.ReadBool(MainSection,ItemShowHex,true)then HexMode:=fHex else HexMode:=fDec;
-  DeviceErrorChB.Checked:=ini.ReadBool(MainSection, ItemDeviceError, true);
-
-//  ConState:=ini.ReadBool(MainSection,ItemConnectionState,false);
-
- { AnalisStart:=ini.ReadInteger(MainSection,ItemAnalisStart,0);
-  case AnalisStart of
-    1: ATPObj.Active:=ini.ReadBool(MainSection,ItemConnectionState,false);
-    2: ATPObj.Active:=true;
-    else begin ATPObj.Active:=false; AnalisStart:=0; end;
-  end;
-  SettingForm.SaveAnalisRG.ItemIndex:=AnalisStart;
-  case AnalisStart of
-    1: remote_on:=ini.ReadBool(MainSection,ItemRemoteOn,false);
-    2: remote_on:=true;
-    else remote_on:=false;
-  end;
-  if remote_on then
-  begin
-    remote[0]:=true; SetRemote(remote);
-  end;
-  RemoteMonButton.Tag:=ini.ReadInteger(MainSection,ItemRemoteFN,0); // заводской номер
-
-  HideInfoPanelChB.Checked:=ini.ReadBool(MainSection,ItemHideInfoPanel,false);
-
-  Pass:=ini.ReadString(MainSection,ItemClientPass,'');
-  EnCrypt16(DeCrypt(Pass),atpPass.b);
-  EnterCriticalSection(atpBD.CritSect);
-  atpBD.PassData.atpPass:=atpPass;
-  atpBD.PassData.change_in:=true;
-  LeaveCriticalSection(atpBD.CritSect);    }
-
-
-  // ------------ DVBT2Section -----------------
-
-  // ------------- JitterTestSection --------------
-{  jitterfiltrCB.ItemIndex:=ini.ReadInteger(JitterTestSection,ItemFilter,0) and 3;
-  pcrpidEdit.Text:=ini.ReadString(JitterTestSection,ItemPCRPID,'$121');
-  pcrpid2Edit.Text:=ini.ReadString(JitterTestSection,ItemPCRPID2,'33');
-  KoefFileNameEdit.Text:=ini.ReadString(JitterTestSection,ItemKoefFileName,'');
-  JitterFiltr_0bEdit.Text:=ini.ReadString(JitterTestSection,ItemKoef0B,'1');
-  JitterFiltr_1bEdit.Text:=ini.ReadString(JitterTestSection,ItemKoef1B,'0');
-  JitterFiltr_2bEdit.Text:=ini.ReadString(JitterTestSection,ItemKoef2B,'0');
-  JitterFiltr_1aEdit.Text:=ini.ReadString(JitterTestSection,ItemKoef1A,'0');
-  JitterFiltr_2aEdit.Text:=ini.ReadString(JitterTestSection,ItemKoef2A,'0');
-  JitterOutGB.ItemIndex:=ini.ReadInteger(JitterTestSection,ItemJitterToFile,0) and 1;
-  JitterOutEdit.Text:=ini.ReadString(JitterTestSection,ItemJitterFileName,'jitter.txt');
-
-  // ------------- ProtocolSection --------------
-  BD.PrnInfo.prot.Header:=ini.ReadString(ProtocolSection,ItemHeader,'');
-  BD.PrnInfo.prot.Location:=ini.ReadString(ProtocolSection,ItemLocation,'');
-  BD.PrnInfo.prot.Podpis:=ini.ReadString(ProtocolSection,ItemPodpis,'гл.инж.— А.Б.Иванов; инж.— В.Г.Петров');
-  BD.PrnInfo.prot.TimeEn:=ini.ReadBool(ProtocolSection,ItemTimeEn,true);
-  BD.PrnInfo.prot.ZakluchEn:=ini.ReadBool(ProtocolSection,ItemZakluchEn,true);
-  BD.PrnInfo.prot.DateEn:=ini.ReadBool(ProtocolSection,ItemDateEn,true);
-  BD.PrnInfo.prot.DateAuto:=ini.ReadBool(ProtocolSection,ItemDateAuto,true);
-  BD.PrnInfo.marg.Top:=ini.ReadInteger(ProtocolSection,ItemMargTop,10);
-  BD.PrnInfo.marg.Bottom:=ini.ReadInteger(ProtocolSection,ItemMargBottom,10);
-  BD.PrnInfo.marg.Left:=ini.ReadInteger(ProtocolSection,ItemMargLeft,20);
-  BD.PrnInfo.marg.Right:=ini.ReadInteger(ProtocolSection,ItemMargRight,10);   }
-
-  // ------------- g420 --------------
-  g420_filename_dsp11_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP11,'');
-  g420_filename_dsp12_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP12,'');
-  g420_filename_dsp21_edit.Text:=ini.ReadString(g420Section, ItemG420_DSP21,'');
-  g420_filename_sd1_edit.Text:=ini.ReadString(g420Section, ItemG420_SD1,'');
-{  g420_filename_sd2_edit.Text:=ini.ReadString(g420Section, ItemG420_SD2,'');
-  g420_filename_sd3_edit.Text:=ini.ReadString(g420Section, ItemG420_SD3,'');
-  g420_filename_sd4_edit.Text:=ini.ReadString(g420Section, ItemG420_SD4,'');
-  g420_parChB.Checked:=ini.ReadBool(g420Section,ItemG420_DoubleSD,false);
-  g420_allChB.Checked:=ini.ReadBool(g420Section,ItemG420_AllSD,false);  }
-  ind:=ini.ReadInteger(g420Section,ItemG420_SendBlocks,5);
-  if (ind<g420_blockCount_SpinEdit.MinValue)or(ind>g420_blockCount_SpinEdit.MaxValue) then ind:=5;
-  g420_blockCount_SpinEdit.Value:=ind;
-  g420_StartAddrEdit.Text:=ini.ReadString(g420Section, ItemG420_StartAddr,'0');
-  IncrChB.Checked:=ini.ReadBool(g420Section,ItemG420_Increment,false);
-  ind:=ini.ReadInteger(g420Section,ItemG420_SD_use,0);
-  if (ind<0)or(ind>=g420_sd_CbB.Items.Count) then ind:=0;
-  g420_sd_CbB.ItemIndex:=ind;
-  ind:=ini.ReadInteger(g420Section,ItemG420_PlayMode,0);
-  if (ind<0)or(ind>=g420_playModeCbB.Items.Count) then ind:=0;
-  g420_playModeCbB.ItemIndex:=ind;
-  g420_bitrateEdit.Text:=ini.ReadString(g420Section, ItemG420_BitRateIn,'2049952');
-  g420_bitrateOutEdit.Text:=ini.ReadString(g420Section, ItemG420_BitRateOut,'2049952');
-  for ind:=0 to 3 do
-  begin
-    FileTime[ind]:=ini.ReadInteger(g420Section, ItemFileTime_prexix+IntToStr(ind), 0);
-    FileCheckSum[ind]:=ini.ReadInteger(g420Section, ItemFileCheckSum_prexix+IntToStr(ind), $ff);
-  end;
-
-  ini.Destroy;
-end;
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 procedure TVisForm.g420_allChBClick(Sender: TObject);
 begin
 {  g420_parChB.Enabled:=not g420_allChB.Checked;
@@ -3302,6 +3489,62 @@ begin
     end;  }
     ListBox1.Items.Add(st);
   end;
+end;
+//------------------------------------------------------------------------------
+function TVisForm.TestHex(val: string; force_hex: boolean):string;
+var st: string;
+i: integer;
+begin
+  st:='';
+//  hextype:=false;
+  for i:=1 to Length(val) do
+  begin
+    case val[i] of
+      '0'..'9','$': st:=st+val[i];
+      'A'..'F','a'..'f':
+      begin
+        st:=st+val[i];
+        force_hex:=true;
+      end;
+    end;
+  end;
+
+  if st='' then st:='0';
+
+  if force_hex then if st[1]<>'$' then st:='$'+st;
+  result:=st;
+end;
+//------------------------------------------------------------------------------
+function TVisForm.GetHexValue(edit: TEdit; var value: dword; force_hex: boolean): boolean;
+var st: string;
+err: integer;
+begin
+  result:=false;
+  st:=TestHex(edit.Text, force_hex);
+  val(st, value, err);
+  if err<>0 then
+  begin
+    edit.Color:=err1Color;
+    exit;
+  end;
+  edit.Color:=clWindow;
+  result:=true;
+end;
+//------------------------------------------------------------------------------
+function TVisForm.GetAddrFromInterface(var addr: TAddressStruct; edit_ind: integer): boolean;
+begin
+  result:=false;
+  if edit_ind<0 then exit;
+  if edit_ind>2 then exit;
+
+  addr.name:=NameEdit[edit_ind].Text;
+  if not GetHexValue(AddrEdit[edit_ind], addr.addr, true) then exit;
+  if not GetHexValue(SizeEdit[edit_ind], addr.el_size, false) then exit;
+  if not GetHexValue(CountEdit[edit_ind], addr.el_count, false) then exit;
+  if not GetHexValue(FromEdit[edit_ind], addr.from_ind, false) then exit;
+  if not GetHexValue(ToEdit[edit_ind], addr.to_ind, false) then exit;
+
+  result:=true;
 end;
 //------------------------------------------------------------------------------
 end.
