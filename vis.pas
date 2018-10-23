@@ -83,8 +83,8 @@ type
     Button3: TButton;
     AddrListPanel: TPanel;
     Panel8: TPanel;
-    Button7: TButton;
-    Button8: TButton;
+    AddAddrButton: TButton;
+    DelAddrButton: TButton;
     AddrListBox: TListBox;
     Splitter2: TSplitter;
     Panel9: TPanel;
@@ -126,7 +126,7 @@ type
     EditStructSB3: TSpeedButton;
     ReadDumpButton3: TButton;
     ReadStructButton3: TButton;
-    Button11: TButton;
+    ChangeAddrButton: TButton;
     ReadDumpListButton: TButton;
     Button13: TButton;
     procedure FormCreate(Sender: TObject);
@@ -162,9 +162,11 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
-    procedure Button7Click(Sender: TObject);
+    procedure AddAddrButtonClick(Sender: TObject);
     procedure Button10Click(Sender: TObject);
     procedure ReadDumpButtonClick(Sender: TObject);
+    procedure DelAddrButtonClick(Sender: TObject);
+    procedure ChangeAddrButtonClick(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -227,7 +229,14 @@ type
 
     procedure ReceivePersBuf(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveRequestBlock(length,target: word; buf: pointer);
-    procedure GetPersMess(mess_cod,req_id: word; length: dword; buf: pointer);
+    procedure ViewDebugArrDumpByte(DebArrByte: PDebugArrByte);
+    procedure ViewDebugArrDumpWord(DebArrWord: PDebugArrWord);
+    procedure ViewDebugArrDumpDword(DebArrDword: PDebugArrDword);
+    procedure ViewDebugArrVarByte(DebArrByte: PDebugArrByte; address: TAddressStruct);
+    procedure ViewDebugArrVarWord(DebArrWord: PDebugArrWord; address: TAddressStruct);
+    procedure ViewDebugArrVarDword(DebArrDword: PDebugArrDword; address: TAddressStruct);
+
+    procedure GetPersMess(mess_cod,req_id: word; leng: dword; buf: pointer);
     function Strg(format: byte; Value: int64; Digits: integer; DecAllign: boolean = false): string;
     function IntToBin(Value: cardinal): string;
     function CurTimeFine: string;
@@ -251,6 +260,7 @@ type
     function GetHexValue(edit: TEdit; var value: dword; force_hex: boolean): boolean;
     function GetAddrFromInterface(var addr: TAddressStruct; edit_ind: integer): boolean;
     procedure AddAddrStruct(addr: TAddressStruct);
+    function AddrToText(const addr: TAddressStruct): string;
     procedure GetAddrToEdit(addr: TAddressStruct; edit_ind: integer);
   public
     { Public declarations }
@@ -651,6 +661,31 @@ begin
   end;
 end;
 //------------------------------------------------------------------------------
+procedure TVisForm.ChangeAddrButtonClick(Sender: TObject);
+var ind, rind, i, count: integer;
+address: TAddressStruct;
+begin
+  ind:=AddrListBox.ItemIndex;
+  if ind<0 then exit;
+  count:=AddrListBox.Count;
+  if ind>=count then exit;
+  if Length(AddrList)<count then
+    SetLength(AddrList, count+20);
+
+  if RadioButton2.Checked then rind:=1
+  else if RadioButton3.Checked then rind:=2
+  else rind:=0;
+
+  if GetAddrFromInterface(address, rind) then
+  begin
+    AddrList[ind]:=address;
+    AddrListBox.Items[ind]:=AddrToText(address);
+  end;
+
+
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TVisForm.Button1Click(Sender: TObject);
 var sig_count, list_count, i: integer;
@@ -711,18 +746,38 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TVisForm.Button7Click(Sender: TObject);
-var addr: TAddressStruct;
+procedure TVisForm.AddAddrButtonClick(Sender: TObject);
+var address: TAddressStruct;
 ind: integer;
 begin
   if RadioButton2.Checked then ind:=1
   else if RadioButton3.Checked then ind:=2
   else ind:=0;
 
-  if GetAddrFromInterface(addr, ind) then
+  if GetAddrFromInterface(address, ind) then
   begin
-    AddAddrStruct(addr);
+    AddAddrStruct(address);
   end;
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.DelAddrButtonClick(Sender: TObject);
+var ind, i, count: integer;
+begin
+  ind:=AddrListBox.ItemIndex;
+  if ind<0 then exit;
+  if ind>=AddrListBox.Count then exit;
+
+  count:=AddrListBox.Count;
+  if Length(AddrList)<count then
+    SetLength(AddrList, count+20);
+  for i:=ind to count-2 do AddrList[i]:=AddrList[i+1];
+
+  AddrListBox.Items.Delete(ind);
+  if ind<AddrListBox.Count then AddrListBox.ItemIndex:=ind
+  else if AddrListBox.Count>0 then AddrListBox.ItemIndex:=AddrListBox.Count-1;
+
+
 end;
 
 //------------------------------------------------------------------------------
@@ -748,8 +803,38 @@ begin
   if Length(AddrList)<count then
     SetLength(AddrList, count+20);
   AddrList[ind]:=addr;
-  AddrListBox.Items.Add(addr.name);
 
+  AddrListBox.Items.Add(AddrToText(addr));
+{  if (addr.from_ind=0)and(addr.to_ind=addr.el_count-1) then
+  begin // все элементы
+    AddrListBox.Items.Add(addr.name);
+  end
+  else if(addr.from_ind=addr.to_ind) then
+  begin  // один элемент
+    AddrListBox.Items.Add(addr.name+'['+IntToStr(addr.from_ind)+']');
+  end
+  else   // диапазон
+  begin
+    AddrListBox.Items.Add(addr.name+'['+IntToStr(addr.from_ind)+'..'+IntToStr(addr.to_ind)+']');
+  end;    }
+end;
+
+//------------------------------------------------------------------------------
+
+function TVisForm.AddrToText(const addr: TAddressStruct): string;
+begin
+  if (addr.from_ind=0)and(addr.to_ind=addr.el_count-1) then
+  begin // все элементы
+    result:=addr.name;
+  end
+  else if(addr.from_ind=addr.to_ind) then
+  begin  // один элемент
+    result:=addr.name+'['+IntToStr(addr.from_ind)+']';
+  end
+  else   // диапазон
+  begin
+    result:=addr.name+'['+IntToStr(addr.from_ind)+'..'+IntToStr(addr.to_ind)+']';
+  end;
 end;
 //------------------------------------------------------------------------------
 
@@ -1227,7 +1312,7 @@ begin
   for i:=0 to count-1 do params.param[i+1]:=P_param[i];
 
 //  SendCommand(target_id, Comand_Send_Info, count+4, @params);
-  SendCommand(target_id, Comand_g420_SetPlayMode, count+4, @params);
+  SendCommand(target_id, Comand_g420_SetPlayMode, 20, @params);
   result:=request_id;
 end;
 //------------------------------------------------------------------------------
@@ -1272,10 +1357,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TVisForm.ReadDumpButtonClick(Sender: TObject);
-var addr: TAddressStruct;
+var address: TAddressStruct;
 ind, i: integer;
 type_access, port: word;
-leng: dword;
+ad, leng: dword;
 // param[0] - request_id, param[1] - type_access (0-byte;1-word;2-dword),
 // param[2]-port(кто запросил), param[3] - start_addr(lo), param[4] - start_addr(hi);
 // param[5] - length(lo)(в байтах), param[6] - length(hi)(в байтах);
@@ -1288,7 +1373,7 @@ begin
     send_en:=(ind>=0)and(ind<AddrListBox.Count)and(ind<length(AddrList));
     if send_en then
     begin
-      addr:=AddrList[ind];
+      address:=AddrList[ind];
       port:=ind;
     end;
   end
@@ -1296,21 +1381,23 @@ begin
   begin
     ind:=TButton(Sender).Tag;
     port:=$ffff-ind;
-    send_en:=GetAddrFromInterface(addr, ind);
+    send_en:=GetAddrFromInterface(address, ind);
   end;
 
   // формируем и отправляем запрос
   if send_en then
   begin
-    if ((addr.addr mod 4)=0)and((addr.el_size mod 4)=0) then type_access:=2
-    else if ((addr.addr mod 2)=0)and((addr.el_size mod 2)=0) then type_access:=1
+    if ((address.addr mod 4)=0)and((address.el_size mod 4)=0) then type_access:=2
+    else if ((address.addr mod 2)=0)and((address.el_size mod 2)=0) then type_access:=1
     else type_access:=0;
 
-    params[1]:=type_access;
+    ad:=address.addr+address.el_size*address.from_ind;
+    leng:=address.el_size*(address.to_ind-address.from_ind+1);
+
+    params[1]:=type_access+$100;
     params[2]:=port;
-    params[3]:=addr.addr and $ffff;
-    params[4]:=(addr.addr shr 16) and $ffff;
-    leng:=addr.el_size*addr.el_count;
+    params[3]:=ad and $ffff;
+    params[4]:=(ad shr 16) and $ffff;
     params[5]:=leng and $ffff;
     params[6]:=(leng shr 16) and $ffff;
     for i:=7 to 16 do params[i]:=0;
@@ -1904,16 +1991,285 @@ begin
   DeleteRequest(pReq);
 end;
 //------------------------------------------------------------------------------
-procedure TVisForm.GetPersMess(mess_cod,req_id: word; length: dword; buf: pointer);
-var i,j, block_length, send_pos, count: integer;
+procedure TVisForm.ViewDebugArrDumpByte(DebArrByte: PDebugArrByte);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=DebArrByte.leng;
+  addr:=DebArrByte.start_addr;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' байт ---------');
+  st:='';
+  for i:=0 to count-1 do
+  begin
+    if (i mod 32)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrByte.start_addr, 8)+':';
+      inc(addr, 32);
+    end;
+    if (i mod 16)=0 then st:=st+' ';
+    if (i mod 8)=0 then st:=st+' ';
+    st:=st+IntToHex(DebArrByte.arr[i], 2)+' ';
+    if (i mod 32)=31 then
+    begin
+      DebugMemo.Lines.Add(st);
+      st:='';
+    end;
+  end;
+  if st<>'' then DebugMemo.Lines.Add(st);
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ViewDebugArrDumpWord(DebArrWord: PDebugArrWord);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=(DebArrWord.leng + 1)div 2;
+  addr:=DebArrWord.start_addr;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' слов ---------');
+  st:='';
+  for i:=0 to count-1 do
+  begin
+    if (i mod 16)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrWord.start_addr, 8)+
+            ':'+IntToHex((addr-DebArrWord.start_addr)shr 1, 8)+': ';
+      inc(addr, 32);
+    end;
+    if (i mod 8)=0 then st:=st+' ';
+    st:=st+IntToHex(DebArrWord.arr[i], 4)+' ';
+    if (i mod 16)=15 then
+    begin
+      DebugMemo.Lines.Add(st);
+      st:='';
+    end;
+  end;
+  if st<>'' then DebugMemo.Lines.Add(st);
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ViewDebugArrDumpDword(DebArrDword: PDebugArrDword);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=(DebArrDword.leng + 3)div 4;
+  addr:=DebArrDword.start_addr;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' двойных слов ---------');
+  st:='';
+  for i:=0 to count-1 do
+  begin
+    if (i mod 8)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrDword.start_addr, 8)+
+            ':'+IntToHex((addr-DebArrDword.start_addr)shr 2, 8)+':  ';
+      inc(addr, 32);
+    end;
+    st:=st+IntToHex(DebArrDword.arr[i], 8)+' ';
+    if (i mod 8)=7 then
+    begin
+      DebugMemo.Lines.Add(st);
+      st:='';
+    end;
+  end;
+  if st<>'' then DebugMemo.Lines.Add(st);
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ViewDebugArrVarByte(DebArrByte: PDebugArrByte; address: TAddressStruct);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=DebArrByte.leng;
+  addr:=DebArrByte.start_addr;
+  if address.el_size<1 then address.el_size:=1;
+  leng_el:=address.el_size;  // число байт в блоке
+  count_block:=leng_el;
+  count_el:=1; // число елементов в строке
+  if leng_el<32 then
+  begin
+    count_el:=32 div leng_el;
+    count_block:=leng_el*count_el;
+  end;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' байт ---------');
+  st:=''; j:=0; ind:=address.from_ind;
+  pos_name:=0;
+  for i:=0 to count-1 do
+  begin
+    if (j mod 32)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrByte.start_addr, 8)+':';
+//                    inc(addr, 32);
+    end;
+    inc(addr);
+    if count_el>1 then
+    begin
+      if j=0 then st:=st+' '
+      else if (j mod leng_el)=0 then st:=st+'| ';
+    end
+    else
+    begin
+      if (j mod 16)=0 then st:=st+' ';
+      if (j mod 8)=0 then st:=st+' ';
+    end;
+    st:=st+IntToHex(DebArrByte.arr[i], 2)+' ';
+    inc(j);
+    if ((j mod 32)=0)or(j=count_block) then
+    begin
+      if pos_name=0 then pos_name:=Length(st);
+      st:=st+'- '+address.name+'['+IntToStr(ind);
+      if count_el>1 then st:=st+'..'+IntToStr(ind+count_el-1);
+      st:=st+']';
+      DebugMemo.Lines.Add(st);
+      st:=''; j:=0;
+      inc(ind, count_el);
+    end;
+  end;
+  if st<>'' then
+  begin
+    for i:=length(st) to pos_name-1 do st:=st+' ';
+    st:=st+'- '+address.name+'['+IntToStr(ind);
+    if address.to_ind>ind then st:=st+'..'+IntToStr(address.to_ind);
+    st:=st+']';
+    DebugMemo.Lines.Add(st);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ViewDebugArrVarWord(DebArrWord: PDebugArrWord; address: TAddressStruct);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=(DebArrWord.leng + 1)div 2;
+  addr:=DebArrWord.start_addr;
+  if address.el_size<2 then address.el_size:=2;
+  leng_el:=address.el_size div 2;  // число слов в блоке
+  count_block:=leng_el;
+  count_el:=1; // число елементов в строке
+  if leng_el<16 then
+  begin
+    count_el:=16 div leng_el;
+    count_block:=leng_el*count_el;
+  end;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' слов ---------');
+  st:=''; j:=0; ind:=address.from_ind;
+  pos_name:=0;
+  for i:=0 to count-1 do
+  begin
+    if (j mod 16)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrWord.start_addr, 8)+
+            ':'+IntToHex((addr-DebArrWord.start_addr)shr 1, 8)+': ';
+//                    inc(addr, 32);
+    end;
+    inc(addr, 2);
+    if count_el>1 then
+    begin
+      if j=0 then st:=st+' '
+      else if (j mod leng_el)=0 then st:=st+'| ';
+    end
+    else
+    begin
+      if (j mod 8)=0 then st:=st+' ';
+    end;
+    st:=st+IntToHex(DebArrWord.arr[i], 4)+' ';
+    inc(j);
+    if ((j mod 16)=0)or(j=count_block) then
+    begin
+      if pos_name=0 then pos_name:=Length(st);
+      st:=st+'- '+address.name+'['+IntToStr(ind);
+      if count_el>1 then st:=st+'..'+IntToStr(ind+count_el-1);
+      st:=st+']';
+      DebugMemo.Lines.Add(st);
+      st:=''; j:=0;
+      inc(ind, count_el);
+    end;
+
+  end;
+  if st<>'' then
+  begin
+    for i:=length(st) to pos_name-1 do st:=st+' ';
+    st:=st+'- '+address.name+'['+IntToStr(ind);
+    if address.to_ind>ind then st:=st+'..'+IntToStr(address.to_ind);
+    st:=st+']';
+    DebugMemo.Lines.Add(st);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TVisForm.ViewDebugArrVarDword(DebArrDword: PDebugArrDword; address: TAddressStruct);
+var st: string;
+i,j, block_length, send_pos, count, ind, count_block, count_el: integer;
+addr: dword;
+pos_name, leng_el: integer;
+begin
+  count:=(DebArrDword.leng + 3)div 4;
+  addr:=DebArrDword.start_addr;
+  if address.el_size<4 then address.el_size:=4;
+  leng_el:=address.el_size div 4;  // число двойных слов в блоке
+  count_block:=leng_el;
+  count_el:=1; // число елементов в строке
+  if leng_el<8 then
+  begin
+    count_el:=8 div leng_el;
+    count_block:=leng_el*count_el;
+  end;
+  DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' двойных слов ---------');
+  st:=''; j:=0; ind:=address.from_ind;
+  pos_name:=0;
+  for i:=0 to count-1 do
+  begin
+    if (j mod 8)=0 then
+    begin
+      st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrDword.start_addr, 8)+
+            ':'+IntToHex((addr-DebArrDword.start_addr)shr 2, 8)+':  ';
+//                    inc(addr, 32);
+    end;
+    inc(addr, 4);
+    if count_el>1 then
+    begin
+      if j=0 then st:=st+' '
+      else if (j mod leng_el)=0 then st:=st+'| ';
+    end;
+    st:=st+IntToHex(DebArrDword.arr[i], 8)+' ';
+    inc(j);
+    if ((j mod 8)=0)or(j=count_block) then
+    begin
+      if pos_name=0 then pos_name:=Length(st);
+      st:=st+'- '+address.name+'['+IntToStr(ind);
+      if count_el>1 then st:=st+'..'+IntToStr(ind+count_el-1);
+      st:=st+']';
+      DebugMemo.Lines.Add(st);
+      st:=''; j:=0;
+      inc(ind, count_el);
+    end;
+  end;
+  if st<>'' then
+  begin
+    for i:=length(st) to pos_name-1 do st:=st+' ';
+    st:=st+'- '+address.name+'['+IntToStr(ind);
+    if address.to_ind>ind then st:=st+'..'+IntToStr(address.to_ind);
+    st:=st+']';
+    DebugMemo.Lines.Add(st);
+  end;
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.GetPersMess(mess_cod,req_id: word; leng: dword; buf: pointer);
+var
+ind, i: integer;
 st: string;
 arr_byte: PArrByte;
 fl: file;
-addr: dword;
 //report: PProgFlashReport;
 DebArrByte: PDebugArrByte;
 DebArrWord: PDebugArrWord;
 DebArrDword: PDebugArrDword;
+view_mode: byte;
+address: TAddressStruct;
 begin
   case mess_cod of
 
@@ -1922,79 +2278,66 @@ begin
         DebArrByte:=buf;
         DebArrWord:=buf;
         DebArrDword:=buf;
+        view_mode:=DebArrByte.view_mode;
+        if view_mode>0 then
+        begin
+          if (DebArrByte.port and $8000)>0 then
+          begin
+            ind:=$ffff-DebArrByte.port;
+            if ind>2 then view_mode:=0 else
+            begin
+              if not GetAddrFromInterface(address, ind) then view_mode:=0;
+            end;
+          end
+          else
+          begin
+            ind:=DebArrByte.port;
+            if (ind<AddrListBox.Count)and(ind<length(AddrList)) then
+              address:=AddrList[ind]
+            else view_mode:=0;
+          end;
+        end;
         case DebArrByte.type_access of
-          0:
+          0:  // byte
           begin
-            count:=DebArrByte.leng;
-            addr:=DebArrByte.start_addr;
-            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' байт ---------');
-            st:='';
-            for i:=0 to count-1 do
-            begin
-              if (i mod 32)=0 then
+            case view_mode of
+              1:  // byte дамп c форматированием по переменным
               begin
-                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrByte.start_addr, 8)+':';
-                inc(addr, 32);
+                ViewDebugArrVarByte(DebArrByte, address);
+              end; // end view_mode=1
+              else  // byte простой дамп
+              begin
+                ViewDebugArrDumpByte(DebArrByte);
+              end; // end view_mode=0
+            end; // end case view_mode
+          end;  // end type_access=0 (byte)
+          1:  // word
+          begin
+            case view_mode of
+              1:  // word дамп c форматированием по переменным
+              begin
+                 ViewDebugArrVarWord(DebArrWord, address);
               end;
-              if (i mod 16)=0 then st:=st+' ';
-              if (i mod 8)=0 then st:=st+' ';
-              st:=st+IntToHex(DebArrByte.arr[i], 2)+' ';
-              if (i mod 32)=31 then
+              else  // word простой дамп
               begin
-                DebugMemo.Lines.Add(st);
-                st:='';
+                ViewDebugArrDumpWord(DebArrWord);
               end;
             end;
-            if st<>'' then DebugMemo.Lines.Add(st);
-          end;
-          1:
+          end; // end type_access=1 (word)
+          2:  // dword
           begin
-            count:=(DebArrWord.leng + 1)div 2;
-            addr:=DebArrWord.start_addr;
-            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' слов ---------');
-            st:='';
-            for i:=0 to count-1 do
-            begin
-              if (i mod 16)=0 then
+            case view_mode of
+              1:  // dword дамп c форматированием по переменным
               begin
-                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrWord.start_addr, 8)+
-                      ':'+IntToHex((addr-DebArrWord.start_addr)shr 1, 8)+': ';
-                inc(addr, 32);
+                ViewDebugArrVarDword(DebArrDword, address);
               end;
-              if (i mod 8)=0 then st:=st+' ';
-              st:=st+IntToHex(DebArrWord.arr[i], 4)+' ';
-              if (i mod 16)=15 then
+              else  // dword простой дамп
               begin
-                DebugMemo.Lines.Add(st);
-                st:='';
+                ViewDebugArrDumpDword(DebArrDword);
               end;
             end;
-            if st<>'' then DebugMemo.Lines.Add(st);
-          end;
-          2:
-          begin
-            count:=(DebArrDword.leng + 3)div 4;
-            addr:=DebArrDword.start_addr;
-            DebugMemo.Lines.Add(CurTimeFine+' --------- Массив '+IntToStr(count)+' двойных слов ---------');
-            st:='';
-            for i:=0 to count-1 do
-            begin
-              if (i mod 8)=0 then
-              begin
-                st:=IntToHex(addr, 8)+':'+IntToHex(addr-DebArrDword.start_addr, 8)+
-                      ':'+IntToHex((addr-DebArrDword.start_addr)shr 2, 8)+':  ';
-                inc(addr, 32);
-              end;
-              st:=st+IntToHex(DebArrDword.arr[i], 8)+' ';
-              if (i mod 8)=7 then
-              begin
-                DebugMemo.Lines.Add(st);
-                st:='';
-              end;
-            end;
-            if st<>'' then DebugMemo.Lines.Add(st);
 
-          end;
+          end;  // end type_access=2 (dword)
           else
           begin
 
@@ -2002,10 +2345,10 @@ begin
         end;
     {    AddLog(CurTimeFine);
         AddLog('request_id = '+Strg(fHex,req_id,4));
-        AddLog('Получен дамп, размер='+IntToStr(length)+'; ('+IntToStr(length div 192)+' пакетов)');
+        AddLog('Получен дамп, размер='+IntToStr(leng)+'; ('+IntToStr(leng div 192)+' пакетов)');
         AssignFile(fl, 'buf_dump.mlt');
         ReWrite(fl, 1);
-        BlockWrite(fl, PArrWord(buf)[0], length);
+        BlockWrite(fl, PArrWord(buf)[0], leng);
         CloseFile(fl);  }
     end;
 
@@ -2020,10 +2363,10 @@ begin
         DebugMemo.Lines.Add('request_id = '+Strg(fHex,req_id,4));
         DebugMemo.Lines.Add('Получен неизвеcтный буфер');
 //        DebugMemo.Lines.Add('Target = '+Strg(fHex,targ+1,4));
-        DebugMemo.Lines.Add('Length = '+IntToStr(length div 2)+' слов');
+        DebugMemo.Lines.Add('Length = '+IntToStr(leng div 2)+' слов');
         DebugMemo.Lines.Add('Command = '+Strg(fHex,mess_cod,4));
         st:='';
-        for i:=0 to (length div 2)-1 do
+        for i:=0 to (leng div 2)-1 do
         begin
           st:=st+Strg(fHex,PArrWord(buf)[i],4)+' ';
           if (i mod 8) = 7 then begin DebugMemo.Lines.Add(st); st:=''; end;
@@ -3540,9 +3883,32 @@ begin
   addr.name:=NameEdit[edit_ind].Text;
   if not GetHexValue(AddrEdit[edit_ind], addr.addr, true) then exit;
   if not GetHexValue(SizeEdit[edit_ind], addr.el_size, false) then exit;
+
   if not GetHexValue(CountEdit[edit_ind], addr.el_count, false) then exit;
+  if addr.el_count<1 then
+  begin
+    addr.el_count:=1;
+    CountEdit[edit_ind].Text:=IntToStr(addr.el_count);
+  end;
+
   if not GetHexValue(FromEdit[edit_ind], addr.from_ind, false) then exit;
+  if addr.from_ind>addr.el_count-1 then
+  begin
+    addr.from_ind:=addr.el_count-1;
+    FromEdit[edit_ind].Text:=IntToStr(addr.from_ind);
+  end;
+
   if not GetHexValue(ToEdit[edit_ind], addr.to_ind, false) then exit;
+  if addr.to_ind<addr.from_ind then
+  begin
+    addr.to_ind:=addr.from_ind;
+    ToEdit[edit_ind].Text:=IntToStr(addr.to_ind);
+  end;
+  if addr.to_ind>addr.el_count-1 then
+  begin
+    addr.to_ind:=addr.el_count-1;
+    ToEdit[edit_ind].Text:=IntToStr(addr.to_ind);
+  end;
 
   result:=true;
 end;

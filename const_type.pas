@@ -506,7 +506,8 @@ type
 
   PDebugArrByte = ^TDebugArrByte;
   TDebugArrByte = packed record
-    type_access: word;
+    type_access: byte;
+    view_mode: byte;
     port: word;
     start_addr: dword;
     leng: dword;
@@ -515,7 +516,8 @@ type
 
   PDebugArrWord = ^TDebugArrWord;
   TDebugArrWord = packed record
-    type_access: word;
+    type_access: byte;
+    view_mode: byte;
     port: word;
     start_addr: dword;
     leng: dword;
@@ -524,7 +526,8 @@ type
 
   PDebugArrDWord = ^TDebugArrDWord;
   TDebugArrDWord = packed record
-    type_access: word;
+    type_access: byte;
+    view_mode: byte;
     port: word;
     start_addr: dword;
     leng: dword;

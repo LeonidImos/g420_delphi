@@ -705,24 +705,25 @@ object VisForm: TVisForm
               Width = 200
               Height = 83
               Align = alTop
-              BevelOuter = bvNone
+              BevelInner = bvLowered
               TabOrder = 0
-              object Button7: TButton
+              object AddAddrButton: TButton
                 Left = 6
                 Top = 8
                 Width = 63
                 Height = 20
                 Caption = #1076#1086#1073#1072#1074#1080#1090#1100
                 TabOrder = 0
-                OnClick = Button7Click
+                OnClick = AddAddrButtonClick
               end
-              object Button8: TButton
+              object DelAddrButton: TButton
                 Left = 6
                 Top = 57
                 Width = 63
                 Height = 20
                 Caption = #1091#1076#1072#1083#1080#1090#1100
                 TabOrder = 1
+                OnClick = DelAddrButtonClick
               end
               object Button10: TButton
                 Left = 77
@@ -733,13 +734,14 @@ object VisForm: TVisForm
                 TabOrder = 2
                 OnClick = Button10Click
               end
-              object Button11: TButton
+              object ChangeAddrButton: TButton
                 Left = 6
                 Top = 31
                 Width = 63
                 Height = 20
                 Caption = #1080#1079#1084#1077#1085#1080#1090#1100
                 TabOrder = 3
+                OnClick = ChangeAddrButtonClick
               end
               object ReadDumpListButton: TButton
                 Left = 77
@@ -800,21 +802,21 @@ object VisForm: TVisForm
             end
             object EditStructSB1: TSpeedButton
               Left = 189
-              Top = 82
+              Top = 62
               Width = 20
               Height = 20
               Caption = '...'
             end
             object EditStructSB2: TSpeedButton
               Left = 189
-              Top = 134
+              Top = 114
               Width = 20
               Height = 20
               Caption = '...'
             end
             object EditStructSB3: TSpeedButton
               Left = 189
-              Top = 188
+              Top = 168
               Width = 20
               Height = 20
               Caption = '...'
@@ -869,14 +871,14 @@ object VisForm: TVisForm
             object CountEdit1: TEdit
               Left = 151
               Top = 82
-              Width = 38
+              Width = 58
               Height = 21
               TabOrder = 6
             end
             object SizeEdit1: TEdit
               Left = 151
               Top = 62
-              Width = 58
+              Width = 38
               Height = 21
               TabOrder = 7
             end
@@ -957,14 +959,14 @@ object VisForm: TVisForm
             object SizeEdit2: TEdit
               Left = 151
               Top = 114
-              Width = 58
+              Width = 38
               Height = 21
               TabOrder = 17
             end
             object CountEdit2: TEdit
               Left = 151
               Top = 134
-              Width = 38
+              Width = 58
               Height = 21
               TabOrder = 18
             end
@@ -1018,14 +1020,14 @@ object VisForm: TVisForm
             object SizeEdit3: TEdit
               Left = 151
               Top = 168
-              Width = 58
+              Width = 38
               Height = 21
               TabOrder = 25
             end
             object CountEdit3: TEdit
               Left = 151
               Top = 188
-              Width = 38
+              Width = 58
               Height = 21
               TabOrder = 26
             end
@@ -1076,7 +1078,7 @@ object VisForm: TVisForm
     Left = 460
     Top = 368
     Bitmap = {
-      494C010102000800B80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800C00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
