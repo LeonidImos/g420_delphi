@@ -229,14 +229,14 @@ begin
   if (MyClientSocket.Connected)and(factory_num>0)and(CurTime>SendStatusTime) then
   begin
     SendStatusTime:=CurTime+1/(24*3600); // 1 s
-    SendCommandSys(1, Comand_Get_Status);
+//    SendCommandSys(1, Comand_Get_Status);
     if wath_dog>0 then dec(wath_dog) else
     begin
       ConnectButton.Tag:=0;
       ConnectButton.Caption:='Установить соединение';
     end;
 //    if (DeviceErrorChB.Checked) then
-//      SendCommandSys(0,Comand_Get_Device_Errors);
+      SendCommandSys(0,Comand_Get_Device_Errors);
   end;
 {  if (MyClientSocket.Connected)and(factory_num>0)and(CurTime>SendDeviceError) then
   begin

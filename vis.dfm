@@ -3,7 +3,7 @@ object VisForm: TVisForm
   Top = 0
   Caption = #1055#1088#1086#1075#1088#1072#1084#1084#1080#1088#1086#1074#1072#1085#1080#1077' '#1075#1077#1085#1077#1088#1072#1090#1086#1088#1072' '#1043'-420'
   ClientHeight = 605
-  ClientWidth = 1075
+  ClientWidth = 1187
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,7 +18,7 @@ object VisForm: TVisForm
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel
-    Left = 683
+    Left = 795
     Top = 0
     Width = 392
     Height = 605
@@ -28,7 +28,7 @@ object VisForm: TVisForm
     object GroupBox3: TGroupBox
       Left = 12
       Top = 75
-      Width = 289
+      Width = 369
       Height = 146
       Caption = #1055#1088#1086#1075#1088#1072#1084#1084#1080#1088#1086#1074#1072#1085#1080#1077' DSP '
       TabOrder = 0
@@ -129,6 +129,15 @@ object VisForm: TVisForm
         TabOrder = 7
         OnClick = g420_dsp21ButtonClick
       end
+      object Button8: TButton
+        Left = 271
+        Top = 75
+        Width = 75
+        Height = 22
+        Caption = #1057#1073#1088#1086#1089
+        TabOrder = 8
+        OnClick = Button8Click
+      end
     end
     object GroupBox6: TGroupBox
       Left = 12
@@ -142,7 +151,7 @@ object VisForm: TVisForm
         Top = 15
         Width = 369
         Height = 276
-        ActivePage = TabSheet2
+        ActivePage = TabSheet1
         Align = alClient
         TabOrder = 0
         object TabSheet1: TTabSheet
@@ -303,6 +312,10 @@ object VisForm: TVisForm
         object TabSheet2: TTabSheet
           Caption = #1057#1087#1080#1089#1082#1086#1084' '#1089#1080#1075#1085#1072#1083#1086#1074
           ImageIndex = 1
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object Panel4: TPanel
             Left = 192
             Top = 0
@@ -546,7 +559,7 @@ object VisForm: TVisForm
   object PageControl2: TPageControl
     Left = 0
     Top = 0
-    Width = 683
+    Width = 795
     Height = 605
     Align = alClient
     TabOrder = 1
@@ -554,7 +567,7 @@ object VisForm: TVisForm
   object Panel2: TPanel
     Left = 0
     Top = 0
-    Width = 683
+    Width = 795
     Height = 605
     Align = alClient
     BevelOuter = bvNone
@@ -562,17 +575,21 @@ object VisForm: TVisForm
     object PageControl: TPageControl
       Left = 0
       Top = 0
-      Width = 683
+      Width = 795
       Height = 605
       ActivePage = TabSheet4
       Align = alClient
       TabOrder = 0
       object TabSheet3: TTabSheet
         Caption = #1086#1073#1097#1080#1081' '#1083#1086#1075
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Memo1: TMemo
           Left = 0
           Top = 81
-          Width = 675
+          Width = 787
           Height = 496
           Align = alClient
           Font.Charset = RUSSIAN_CHARSET
@@ -587,7 +604,7 @@ object VisForm: TVisForm
         object Panel7: TPanel
           Left = 0
           Top = 0
-          Width = 675
+          Width = 787
           Height = 81
           Align = alTop
           BevelOuter = bvNone
@@ -652,16 +669,17 @@ object VisForm: TVisForm
         object Splitter1: TSplitter
           Left = 0
           Top = 220
-          Width = 675
+          Width = 787
           Height = 6
           Cursor = crVSplit
           Align = alTop
           ExplicitTop = 277
+          ExplicitWidth = 675
         end
         object DebugMemo: TMemo
           Left = 0
           Top = 226
-          Width = 675
+          Width = 787
           Height = 351
           Align = alClient
           Font.Charset = RUSSIAN_CHARSET
@@ -676,7 +694,7 @@ object VisForm: TVisForm
         object DebugHeaderPanel: TPanel
           Left = 0
           Top = 0
-          Width = 675
+          Width = 787
           Height = 220
           Align = alTop
           BevelOuter = bvNone
@@ -774,7 +792,7 @@ object VisForm: TVisForm
           object Panel9: TPanel
             Left = 206
             Top = 0
-            Width = 469
+            Width = 581
             Height = 220
             Align = alClient
             BevelInner = bvLowered
@@ -820,6 +838,174 @@ object VisForm: TVisForm
               Width = 20
               Height = 20
               Caption = '...'
+            end
+            object SpeedButton1: TSpeedButton
+              Left = 421
+              Top = 82
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton2: TSpeedButton
+              Tag = 1
+              Left = 441
+              Top = 82
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton3: TSpeedButton
+              Tag = 2
+              Left = 461
+              Top = 82
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object Label6: TLabel
+              Left = 476
+              Top = 43
+              Width = 35
+              Height = 13
+              Caption = #1047#1072#1087#1080#1089#1100
+            end
+            object SpeedButton4: TSpeedButton
+              Tag = 6
+              Left = 537
+              Top = 83
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton5: TSpeedButton
+              Tag = 5
+              Left = 517
+              Top = 83
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton6: TSpeedButton
+              Tag = 4
+              Left = 497
+              Top = 83
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton7: TSpeedButton
+              Tag = 22
+              Left = 537
+              Top = 134
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton8: TSpeedButton
+              Tag = 21
+              Left = 517
+              Top = 135
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton9: TSpeedButton
+              Tag = 20
+              Left = 497
+              Top = 134
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton10: TSpeedButton
+              Tag = 18
+              Left = 461
+              Top = 134
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton11: TSpeedButton
+              Tag = 17
+              Left = 441
+              Top = 134
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton12: TSpeedButton
+              Tag = 16
+              Left = 421
+              Top = 134
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton13: TSpeedButton
+              Tag = 38
+              Left = 537
+              Top = 189
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton14: TSpeedButton
+              Tag = 37
+              Left = 517
+              Top = 189
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton15: TSpeedButton
+              Tag = 36
+              Left = 497
+              Top = 189
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton16: TSpeedButton
+              Tag = 34
+              Left = 461
+              Top = 188
+              Width = 24
+              Height = 20
+              Caption = 'DW'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton17: TSpeedButton
+              Tag = 33
+              Left = 441
+              Top = 188
+              Width = 20
+              Height = 20
+              Caption = 'W'
+              OnClick = WriteSBClick
+            end
+            object SpeedButton18: TSpeedButton
+              Tag = 32
+              Left = 421
+              Top = 188
+              Width = 20
+              Height = 20
+              Caption = 'B'
+              OnClick = WriteSBClick
             end
             object NameEdit1: TEdit
               Left = 47
@@ -1064,6 +1250,57 @@ object VisForm: TVisForm
               Caption = #1095#1080#1090#1072#1090#1100' '#1082#1072#1082' '#1089#1090#1088#1091#1082#1082#1090'.'
               TabOrder = 30
             end
+            object Button7: TButton
+              Left = 420
+              Top = 5
+              Width = 75
+              Height = 25
+              Caption = 'Button7'
+              TabOrder = 31
+              OnClick = Button7Click
+            end
+            object WriteAEdit1: TEdit
+              Left = 422
+              Top = 62
+              Width = 62
+              Height = 21
+              TabOrder = 32
+            end
+            object WriteBEdit1: TEdit
+              Left = 498
+              Top = 62
+              Width = 62
+              Height = 21
+              TabOrder = 33
+            end
+            object WriteBEdit2: TEdit
+              Left = 498
+              Top = 114
+              Width = 62
+              Height = 21
+              TabOrder = 34
+            end
+            object WriteAEdit2: TEdit
+              Left = 422
+              Top = 114
+              Width = 62
+              Height = 21
+              TabOrder = 35
+            end
+            object WriteBEdit3: TEdit
+              Left = 498
+              Top = 168
+              Width = 62
+              Height = 21
+              TabOrder = 36
+            end
+            object WriteAEdit3: TEdit
+              Left = 422
+              Top = 168
+              Width = 62
+              Height = 21
+              TabOrder = 37
+            end
           end
         end
       end
@@ -1078,7 +1315,7 @@ object VisForm: TVisForm
     Left = 460
     Top = 368
     Bitmap = {
-      494C010102000800C00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800D00010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

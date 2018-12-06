@@ -129,6 +129,33 @@ type
     ChangeAddrButton: TButton;
     ReadDumpListButton: TButton;
     Button13: TButton;
+    Button7: TButton;
+    WriteAEdit1: TEdit;
+    WriteBEdit1: TEdit;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
+    SpeedButton3: TSpeedButton;
+    Label6: TLabel;
+    SpeedButton4: TSpeedButton;
+    SpeedButton5: TSpeedButton;
+    SpeedButton6: TSpeedButton;
+    SpeedButton7: TSpeedButton;
+    SpeedButton8: TSpeedButton;
+    SpeedButton9: TSpeedButton;
+    SpeedButton10: TSpeedButton;
+    SpeedButton11: TSpeedButton;
+    SpeedButton12: TSpeedButton;
+    WriteBEdit2: TEdit;
+    WriteAEdit2: TEdit;
+    SpeedButton13: TSpeedButton;
+    SpeedButton14: TSpeedButton;
+    SpeedButton15: TSpeedButton;
+    SpeedButton16: TSpeedButton;
+    SpeedButton17: TSpeedButton;
+    SpeedButton18: TSpeedButton;
+    WriteBEdit3: TEdit;
+    WriteAEdit3: TEdit;
+    Button8: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -167,6 +194,9 @@ type
     procedure ReadDumpButtonClick(Sender: TObject);
     procedure DelAddrButtonClick(Sender: TObject);
     procedure ChangeAddrButtonClick(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
+    procedure WriteSBClick(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -202,6 +232,8 @@ type
     EditStructSB: array[0..2]of TSpeedButton;
     ReadDumpButton: array[0..2]of TButton;
     ReadStructButton: array[0..2]of TButton;
+    WriteAEdit: array[0..2]of TEdit;
+    WriteBEdit: array[0..2]of TEdit;
     AddrList: array of TAddressStruct;
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     function EventConnect(CurTime: TDateTime): boolean;
@@ -299,6 +331,8 @@ begin
   EditStructSB[0]:=EditStructSB1;
   ReadDumpButton[0]:=ReadDumpButton1;
   ReadStructButton[0]:=ReadStructButton1;
+  WriteAEdit[0]:=WriteAEdit1;
+  WriteBEdit[0]:=WriteBEdit1;
   NameEdit[1]:=NameEdit2;
   AddrEdit[1]:=AddrEdit2;
   SizeEdit[1]:=SizeEdit2;
@@ -308,6 +342,8 @@ begin
   EditStructSB[1]:=EditStructSB2;
   ReadDumpButton[1]:=ReadDumpButton2;
   ReadStructButton[1]:=ReadStructButton2;
+  WriteAEdit[1]:=WriteAEdit2;
+  WriteBEdit[1]:=WriteBEdit2;
   NameEdit[2]:=NameEdit3;
   AddrEdit[2]:=AddrEdit3;
   SizeEdit[2]:=SizeEdit3;
@@ -317,6 +353,9 @@ begin
   EditStructSB[2]:=EditStructSB3;
   ReadDumpButton[2]:=ReadDumpButton3;
   ReadStructButton[2]:=ReadStructButton3;
+  WriteAEdit[2]:=WriteAEdit3;
+  WriteBEdit[2]:=WriteBEdit3;
+
   LoadFromFile;
 
 end;
@@ -582,6 +621,7 @@ begin
       g420_sd_StatusPanel.Caption:='Ошибочный размер файла = '+IntToStr(size);
       Memo1.Lines.Add('размер файла не кратен числу SD карт');
       G420FileStruct.state:=2;
+      ProgListCount:=0;
       exit;
     end;
 //    block_count_one:=SignalList[ind].Signal_br[bi].leng_bl;
@@ -619,6 +659,56 @@ begin
       memo1.Lines.Add('BitRateInput='+IntToStr(mess.BitRateInput));
       memo1.Lines.Add('BitRateOutput='+IntToStr(mess.BitRateOutput));
       memo1.Lines.Add('name="'+name+'"');
+    end;
+  end;
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.WriteSBClick(Sender: TObject);
+var type_access, type_access_posible: byte;
+tag, wind, rind, i: integer;
+DataEdit: TEdit;
+ad, dat: dword;
+params: array[1..16] of word;
+send_en: boolean;
+address: TAddressStruct;
+
+begin
+  tag:=TSpeedButton(Sender).Tag;
+  type_access:=tag and 3;
+  wind:=(tag shr 2)and 3;
+  rind:=(tag shr 4)and $0fff;
+  if rind>2 then exit;
+  case wind of
+    0: DataEdit:=WriteAEdit[rind];
+    1: DataEdit:=WriteBEdit[rind];
+    else exit;
+  end;
+  send_en:=GetAddrFromInterface(address, rind);
+  if not GetHexValue(DataEdit, dat, false) then send_en:=false;
+  if send_en then
+  begin
+//    ad:=$00900000;
+//    dat:=$12345678;
+    ad:=address.addr+address.from_ind*address.el_size;
+
+    if ((address.addr mod 4)=0)and((address.el_size mod 4)=0) then type_access_posible:=2
+    else if ((address.addr mod 2)=0)and((address.el_size mod 2)=0) then type_access_posible:=1
+    else type_access_posible:=0;
+    if type_access>type_access_posible then type_access:=type_access_posible;
+
+    params[1]:=type_access;
+    params[2]:=ad and $ffff;
+    params[3]:=(ad shr 16) and $ffff;
+    params[4]:=dat and $ffff;
+    params[5]:=(dat shr 16) and $ffff;
+    for i:=6 to 16 do params[i]:=0;
+
+    SendCommandDSP(0, DSP_Comand_Write_Data, 6, @params);
+    case type_access of
+      0: DebugMemo.Lines.Add('Запись byte '+Strg(fHexDec, dat and $ff, 2)+' по адресу '+Strg(fHex, ad, 8));
+      1: DebugMemo.Lines.Add('Запись word '+Strg(fHexDec, dat and $ffff, 4)+' по адресу '+Strg(fHex, ad, 8));
+      2: DebugMemo.Lines.Add('Запись dword '+Strg(fHexDec, dat, 8)+' по адресу '+Strg(fHex, ad, 8));
     end;
   end;
 end;
@@ -742,6 +832,29 @@ begin
   mess.PlayCommand:=103;
   mess.StartAdress:=$400;
   SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button7Click(Sender: TObject);
+var params: array[1..16] of word;
+ad, dat, i: dword;
+begin
+  ad:=$00900000;
+  dat:=$12345678;
+  params[1]:=0;
+  params[2]:=ad and $ffff;
+  params[3]:=(ad shr 16) and $ffff;
+  params[4]:=dat and $ffff;
+  params[5]:=(dat shr 16) and $ffff;
+  for i:=6 to 16 do params[i]:=0;
+
+
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button8Click(Sender: TObject);
+begin
+  SendCommandDSP(0, DSP_Comand_BlackFin_Reset, 0, nil);
 end;
 
 //------------------------------------------------------------------------------
@@ -1309,7 +1422,8 @@ begin
   params.command:=comand;
   params.length:=count+1;
   params.param[0]:=req_id_force;
-  for i:=0 to count-1 do params.param[i+1]:=P_param[i];
+  if count>0 then
+    for i:=0 to count-1 do params.param[i+1]:=P_param[i];
 
 //  SendCommand(target_id, Comand_Send_Info, count+4, @params);
   SendCommand(target_id, Comand_g420_SetPlayMode, 20, @params);
@@ -1383,7 +1497,6 @@ begin
     port:=$ffff-ind;
     send_en:=GetAddrFromInterface(address, ind);
   end;
-
   // формируем и отправляем запрос
   if send_en then
   begin
@@ -2105,7 +2218,7 @@ begin
 //                    inc(addr, 32);
     end;
     inc(addr);
-    if count_el>1 then
+    if (count_el>1)and(leng_el>1) then
     begin
       if j=0 then st:=st+' '
       else if (j mod leng_el)=0 then st:=st+'| ';
@@ -2167,7 +2280,7 @@ begin
 //                    inc(addr, 32);
     end;
     inc(addr, 2);
-    if count_el>1 then
+    if (count_el>1)and(leng_el>1) then
     begin
       if j=0 then st:=st+' '
       else if (j mod leng_el)=0 then st:=st+'| ';
@@ -2229,7 +2342,7 @@ begin
 //                    inc(addr, 32);
     end;
     inc(addr, 4);
-    if count_el>1 then
+    if (count_el>1)and(leng_el>1) then
     begin
       if j=0 then st:=st+' '
       else if (j mod leng_el)=0 then st:=st+'| ';
@@ -3140,6 +3253,7 @@ begin
     g420_sd_StatusPanel.Caption:='Ошибочный размер файла = '+IntToStr(size);
     Memo1.Lines.Add('размер файла не кратен числу SD карт');
     G420FileStruct.state:=2;
+    ProgListCount:=0;
     exit;
   end;
   leng_one:=((size-1)div group) + 1;
@@ -3299,6 +3413,7 @@ begin
       end;
       Memo1.Lines.Add('размер файла не кратен числу SD карт');
       G420FileStruct.state:=2;
+      ProgListCount:=0;
       exit;
     end;
     leng_one:=((size-1)div group) + 1;
@@ -3634,6 +3749,7 @@ begin
     end;
 
     G420FileStruct.state:=2;
+    ProgListCount:=0;
     exit;
   end;
 
@@ -3732,6 +3848,7 @@ begin
         end;
     end;
     G420FileStruct.state:=2;
+    ProgListCount:=0;
     exit;
   end;
 
@@ -3813,6 +3930,7 @@ begin
       G420FileStruct.StatusPanel.Color:=err1Color;
     end;
     G420FileStruct.state:=2;
+    ProgListCount:=0;
   end;
 end;
 //------------------------------------------------------------------------------

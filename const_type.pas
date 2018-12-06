@@ -38,6 +38,8 @@ G420_MAX_PROG_LIST = 200;
 
   Comand_Send_Info        = $8002;
 
+  DSP_Comand_BlackFin_Reset          = $0117;
+  DSP_Comand_Write_Data              = $0118;
   DSP_Comand_Get_Array               = $030E;
   DEBUG_ARRAY       = $430E;
 
@@ -550,6 +552,25 @@ type
     length: word;
     param: array[0..16]of word;
   end;
+//******************************************************************************
+  TOptInitTSoIP_out = packed record
+    self_mac: tMac;
+  end;
+
+  TOptInitTSoIP_in = packed record
+    self_mac: tMac;
+  end;
+
+  pOptInit = ^tOptInit;
+  tOptInit = packed record
+    case integer of
+    0:(arr: array[0..255]of byte;);
+    1:(tsoip_out: TOptInitTSoIP_out;);
+    2:(tsoip_in: TOptInitTSoIP_in;);
+  end;
+
+  POptionsInit_v3 = ^TOptionsInit_v3;
+  TOptionsInit_v3 = array[0..MAX_OPT_ARR-1]of tOptInit;
 
 
 implementation
