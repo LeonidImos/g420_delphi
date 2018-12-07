@@ -40,7 +40,12 @@ G420_MAX_PROG_LIST = 200;
 
   DSP_Comand_BlackFin_Reset          = $0117;
   DSP_Comand_Write_Data              = $0118;
+  DSP_Comand_Set_T2MI_Param_part1    = $0150;
+  DSP_Comand_Set_T2MI_Param_part2    = $0151;
+  DSP_Comand_Set_T2MI_Param_part3    = $0152;
   DSP_Comand_Get_Array               = $030E;
+  DSP_Comand_Set_T2MI_Param          = $0350;
+  DSP_Comand_Get_Signal_Descriptors  = $0351;
   DEBUG_ARRAY       = $430E;
 
 

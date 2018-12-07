@@ -40,6 +40,7 @@ type
     g420_bitrateOutEdit: TEdit;
     CheckBox1: TCheckBox;
     Label1: TLabel;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure TabControl1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -47,6 +48,7 @@ type
     procedure SpeedButton1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
     CurDir, IniFileName, SigListFileName: string;
@@ -93,6 +95,8 @@ var
   ControlForm: TControlForm;
 
 implementation
+
+uses t2mi_set;
 
 {$R *.dfm}
 //******************************************************************************
@@ -651,6 +655,12 @@ begin
 //    SendCommandSys(0,Comand_Get_Device_Errors);
 end;
 //------------------------------------------------------------------------------
+procedure TControlForm.Button1Click(Sender: TObject);
+begin
+  T2miSetForm.ShowModal;
+end;
+//------------------------------------------------------------------------------
+
 procedure TControlForm.CheckBox1Click(Sender: TObject);
 begin
   g420_bitrateOutEdit.Enabled:=CheckBox1.Checked;
@@ -912,13 +922,14 @@ begin
   if (sind<0)or(sind>=sig_count) then exit;
   if sig_info[pind].list[sind].sig_id_type<8 then
   begin
-      CheckBox1.Enabled:=true;
+      CheckBox1.Visible:=true;
+      g420_bitrateOutEdit.Visible:=true;
       g420_bitrateOutEdit.Enabled:=CheckBox1.Checked;
   end
   else
   begin
-      CheckBox1.Enabled:=false;
-      g420_bitrateOutEdit.Enabled:=false;
+      CheckBox1.Visible:=false;
+      g420_bitrateOutEdit.Visible:=false;
   end;
 end;
 //------------------------------------------------------------------------------

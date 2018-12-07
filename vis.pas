@@ -156,6 +156,9 @@ type
     WriteBEdit3: TEdit;
     WriteAEdit3: TEdit;
     Button8: TButton;
+    Button11: TButton;
+    Edit2: TEdit;
+    SpeedButton19: TSpeedButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -197,6 +200,8 @@ type
     procedure Button7Click(Sender: TObject);
     procedure WriteSBClick(Sender: TObject);
     procedure Button8Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
+    procedure SpeedButton19Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -662,6 +667,12 @@ begin
     end;
   end;
 end;
+procedure TVisForm.SpeedButton19Click(Sender: TObject);
+begin
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Descriptors, 0, nil);
+
+end;
+
 //------------------------------------------------------------------------------
 
 procedure TVisForm.WriteSBClick(Sender: TObject);
@@ -751,6 +762,14 @@ begin
   end;
 end;
 //------------------------------------------------------------------------------
+procedure TVisForm.Button11Click(Sender: TObject);
+var param: word;
+begin
+  param:=StrToInt(Edit2.Text);
+  SendCommandDSP(0, DSP_Comand_Set_T2MI_Param, 1, @param);
+end;
+
+//------------------------------------------------------------------------------
 procedure TVisForm.ChangeAddrButtonClick(Sender: TObject);
 var ind, rind, i, count: integer;
 address: TAddressStruct;
@@ -839,14 +858,14 @@ procedure TVisForm.Button7Click(Sender: TObject);
 var params: array[1..16] of word;
 ad, dat, i: dword;
 begin
-  ad:=$00900000;
-  dat:=$12345678;
-  params[1]:=0;
-  params[2]:=ad and $ffff;
-  params[3]:=(ad shr 16) and $ffff;
-  params[4]:=dat and $ffff;
-  params[5]:=(dat shr 16) and $ffff;
-  for i:=6 to 16 do params[i]:=0;
+  for i:=1 to 16 do params[i]:=i*256 + i;
+  SendCommandDSP(0, DSP_Comand_Set_T2MI_Param_part1, 16, @params);
+
+  for i:=1 to 16 do params[i]:=(i+16)*257;
+  SendCommandDSP(0, DSP_Comand_Set_T2MI_Param_part2, 16, @params);
+
+  for i:=1 to 16 do params[i]:=(i+32)*257;
+  SendCommandDSP(0, DSP_Comand_Set_T2MI_Param_part3, 16, @params);
 
 
 end;

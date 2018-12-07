@@ -52,6 +52,9 @@
 			<DCCReference Include="main_control.pas">
 				<Form>ControlForm</Form>
 			</DCCReference>
+			<DCCReference Include="t2mi_set.pas">
+				<Form>T2miSetForm</Form>
+			</DCCReference>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
