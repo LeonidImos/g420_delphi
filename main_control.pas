@@ -49,10 +49,11 @@ type
     procedure CheckBox1Click(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
   private
     { Private declarations }
     CurDir, IniFileName, SigListFileName: string;
-    MyClientSocket: TMyClientSocket;
+//    MyClientSocket: TMyClientSocket;
     factory_num: word;
     ver_device: word;
     ConnectState: integer;
@@ -62,10 +63,12 @@ type
     SendDeviceError: TDateTime;    // время следующей посылки запроса DeviceError
     ArrIn: TarrTCP;
     ArrInPos: integer;
-    mess: TMessOut;
+//    mess: TMessOut;
     sig_info: array of TPage;
     old_page: integer;
     IdleSleepTime: TDateTime;
+//    request_id: word;
+    StartRequest: PRequest;
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     function EventConnect(CurTime: TDateTime): boolean;
     function EventSendTimer(CurTime: TDateTime): boolean;
@@ -73,13 +76,27 @@ type
     function FindFirst(i1,i2:integer):integer;
     function GetLengMess(p:integer):integer;
     procedure GetMess(p,leng_mess:integer; const ArrIn: TarrTCP);
-    function SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean;
-    function SendCommandSys(target_id,comand:word): boolean;
-    function SendCommandSysParam(target_id,comand,param:word): boolean;
+//    function SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean;
+//    function SendCommandSys(target_id,comand:word): boolean;
+//    function SendCommandSysParam(target_id,comand,param:word): boolean;
+//    function SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word;
+//    procedure SendCommandDSP_continue(target_id,comand, block_length: word; start_addr: dword; P_param: PArrWord; req_id_force: word);
+//    function SendCommandDSP2(target_id,comand,count,param1,param2: word): word;
     procedure ReceiveDeviceInfo(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveSysError(p,leng:integer; const ArrIn: TarrTCP);
 //    procedure ReceiveProgArrStatus(p,leng:integer; const ArrIn: TarrTCP);
     procedure ReceiveStatus(p:integer; const ArrIn: TarrTCP);
+
+    function AddRequest(req_id: word):PRequest;
+    procedure DeleteRequest(PReq: PRequest);
+    procedure ClearRequests;
+    function GetRequest(req_id: word; make_new: boolean): PRequest;
+
+    procedure ReceivePersBuf(p,leng:integer; const ArrIn: TarrTCP);
+    procedure ReceiveRequestBlock(length,target: word; buf: pointer);
+
+    procedure GetPersMess(mess_cod,req_id: word; leng: dword; buf: pointer);
+
     function CurTimeFine: string;
     procedure EnCrypt16(pass: string; var arr: tPassword);
     function DeCrypt16(arr: tPassword): string;
@@ -93,6 +110,16 @@ type
 
 var
   ControlForm: TControlForm;
+  MyClientSocket: TMyClientSocket;
+  mess: TMessOut;
+  request_id: word;
+
+  function SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean; forward;
+  function SendCommandSys(target_id,comand:word): boolean; forward;
+  function SendCommandSysParam(target_id,comand,param:word): boolean; forward;
+  function SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word; forward;
+  procedure SendCommandDSP_continue(target_id,comand, block_length: word; start_addr: dword; P_param: PArrWord; req_id_force: word); forward;
+  function SendCommandDSP2(target_id,comand,count,param1,param2: word): word;
 
 implementation
 
@@ -100,6 +127,161 @@ uses t2mi_set;
 
 {$R *.dfm}
 //******************************************************************************
+function SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean;
+var i, leng: integer;
+g420: TG420ReceivePack;
+g420Send: PG420Send;
+//item: PCommandItem;
+begin
+  result:=false;
+
+{  if (G420loopChB.Checked)and(comand=Comand_g420_ProgArr) then
+  begin
+    leng:=SizeOf(TG420ReceivePack);
+    g420Send:=@P_param[0];
+    g420.header.Prefix:=$12AF6599;
+    g420.header.Length:=leng;
+    g420.header.Target_ID:=0;
+    g420.header.Command:=Comand_g420_ProgArr;
+    g420.header.Response:=0;
+    g420.mess.dest_device:=g420Send.header.dest_device;
+    g420.mess.device_param:=g420Send.header.device_param;
+    g420.mess.Block_count:=1;
+    g420.mess.start_address:=g420Send.header.start_address;
+    g420.mess.prog_status:=0;
+//    g420.mess.prog_status:=$800000e4;
+//    ReceiveProgArrStatus(-16, SizeOf(TG420ReceiveMess), ParrTCP(@g420mess)^);
+    MyClientSocket.EmulReceiveBuf(g420, leng);
+    case g420Send.header.dest_device of
+      3: save_last_block:=g420Send.header.start_address+g420Send.header.arr_length-1;
+      4..7:
+      begin
+        if g420Send.header.start_address=save_last_block then
+        begin
+          g420.mess.device_param:=1;
+          g420.mess.start_address:=1234;
+          MyClientSocket.EmulReceiveBuf(g420, leng);
+        end;
+      end;
+    end;
+//    sleep(5);
+    result:=true;
+    exit;
+  end;      }
+
+  if not MyClientSocket.Connected then exit;
+
+
+  if count>MAX_OUT_MESS_PARAM then count:=MAX_OUT_MESS_PARAM;
+  if P_param=nil then count:=0;
+  leng:=16+2*count;
+//  mess:=AllocMem(leng);
+//  new(item);
+  mess.header.Prefix:=$12AF6599;
+  mess.header.Length:=leng;
+  mess.header.Target_ID:=target_id;
+  mess.header.Command:=comand;
+  mess.header.Response:=0;
+  for i:=0 to count-1 do mess.param[i]:=p_param[i];
+  move(P_param[0], mess.param[0], leng-16);
+
+  MyClientSocket.SendBuf(mess, leng);
+
+  result:=true;
+end;
+//------------------------------------------------------------------------------
+function SendCommandSys(target_id,comand:word): boolean;
+begin
+  result:=SendCommand(target_id,comand,0,nil);
+end;
+//------------------------------------------------------------------------------
+function SendCommandSysParam(target_id,comand,param:word): boolean;
+begin
+  result:=SendCommand(target_id,comand,1,@param);
+end;
+//------------------------------------------------------------------------------
+function SendCommandDSP(target_id,comand,count: word; P_param: PArrWord; req_id_force: word = $ffff): word;
+var i: integer;
+//params: array[0..MAX_OUT_MESS_PARAM+4-1]of word;
+params: TDSPCommand;
+begin
+  if req_id_force=$ffff then
+  begin
+    inc(request_id); if request_id>$ff00 then request_id:=0;
+    req_id_force:=request_id;
+  end;
+  if count>16 then count:=16;
+
+{  params[0]:=$55aa; params[1]:=comand; params[2]:=count+1 ;
+  params[3]:=req_id_force;
+  for i:=0 to count-1 do params[i+4]:=P_param[i]; }
+  params.play_state:=100;
+  params.play_mode:=0;
+  params.command:=comand;
+  params.length:=count+1;
+  params.param[0]:=req_id_force;
+  if count>0 then
+    for i:=0 to count-1 do params.param[i+1]:=P_param[i];
+
+//  SendCommand(target_id, Comand_Send_Info, count+4, @params);
+  SendCommand(target_id, Comand_g420_SetPlayMode, 20, @params);
+  result:=request_id;
+end;
+//------------------------------------------------------------------------------
+procedure SendCommandDSP_continue(target_id,comand, block_length: word; start_addr: dword; P_param: PArrWord; req_id_force: word);
+var i: integer;
+params: array[0..SEND_BLOCK_SIZE+8-1]of word;
+check_sum, count: word;
+begin
+{  if req_id_force=$ffff then
+  begin
+    inc(request_id); if request_id>$ff00 then request_id:=0;
+    req_id_force:=request_id;
+  end;     }
+  count:=(block_length+1)shr 1; // размер блока данных в словах (block_length - в байтах)
+  if count>SEND_BLOCK_SIZE then count:=SEND_BLOCK_SIZE;
+
+  params[0]:=$55aa; params[1]:=comand; params[2]:=count+5 ;
+  params[3]:=req_id_force;
+  params[5]:=start_addr and $ffff;
+  params[6]:=(start_addr shr 16) and $ffff;
+  params[7]:=block_length;
+  check_sum:=req_id_force;
+  for i:=5 to 7 do check_sum:=(check_sum + params[i]) and $ffff;
+
+  for i:=0 to count-1 do
+  begin
+    params[i+8]:=P_param[i];
+    check_sum:=(check_sum + P_param[i]) and $ffff;
+  end;
+  params[4]:=check_sum;
+
+  SendCommand(target_id, Comand_Send_Info, count+8, @params);
+end;
+//------------------------------------------------------------------------------
+function SendCommandDSP2(target_id,comand,count,param1,param2: word): word;
+var params: array[0..1]of word;
+begin
+  if count>2 then count:=2;
+  params[0]:=param1; params[1]:=param2;
+  result:=SendCommandDSP(target_id, comand, count, @params);
+end;
+//------------------------------------------------------------------------------
+
+procedure TControlForm.FormActivate(Sender: TObject);
+var i: integer;
+begin
+  for i:=1 to ParamCount do
+  begin
+    if LowerCase(ParamStr(i)) = '/test' then
+    begin
+      T2miSetForm.Test1Button.Visible:=true;
+      T2miSetForm.Test2Button.Visible:=true;
+    end;
+  end;
+end;
+//------------------------------------------------------------------------------
+
 procedure TControlForm.FormCreate(Sender: TObject);
 begin
   CurDir:=GetCurrentDir;
@@ -113,7 +295,6 @@ begin
   LoadSignal;
   LoadParamFromFile;
   Application.OnIdle:=ApplicationIdle;
-
 end;
 //------------------------------------------------------------------------------
 procedure TControlForm.FormDestroy(Sender: TObject);
@@ -209,6 +390,7 @@ begin
       3: begin
            ConnectStatusPanel.Caption:='Есть соединение c Г420 № '+IntToStr(factory_num);
            ConnectStatusPanel.Color:=clLime;
+
          end;
     end;
     ConnectState:=new_state;
@@ -218,6 +400,7 @@ end;
 //------------------------------------------------------------------------------
 function TControlForm.EventSendTimer(CurTime: TDateTime): boolean;
 var Pass: TPass_uni;
+param: word;
 begin
   result:=false;
 
@@ -227,6 +410,8 @@ begin
     EnCrypt16('', Pass.b);
     SendCommand(Target0,Comand_Get_Device_Info, 8, @Pass);
     SendCommandSysParam(Target0, Comand_Set_Device_Mode, 1);
+    param:=0;
+    SendCommandDSP(0, DSP_Comand_Set_T2MI_Param, 1, @param);
     wath_dog:=10;
   end;
 
@@ -345,7 +530,7 @@ begin
            Mess_Device_Info: ReceiveDeviceInfo(p,header.Length,ArrIn);
            Mess_Device_Errors: ReceiveSysError(p,header.Length,ArrIn);
 //           Mess_Device_TimeStat: ReceiveTimeStat(p,ArrIn);
-//           Mess_Data: ReceivePersBuf(p,header.Length,ArrIn);
+           Mess_Data: ReceivePersBuf(p,header.Length,ArrIn);
 //           Mess_SysMegaBuffer: ReceiveSysMegaBuf(p,ArrIn);
 //           Mess_Opt_Control: ReceiveOptControl(p,header.Length,ArrIn);
 //           Mess_Opt_Status: ReceiveOptStatus(p,header.Length,ArrIn);
@@ -375,79 +560,6 @@ begin
 //  if b_d.Log.log_com_enable then LogRecvCommand(header, @ArrIn[p+16]);
 
 //  Time1:=0;
-end;
-//------------------------------------------------------------------------------
-function TControlForm.SendCommand(target_id,comand,count: word; P_param: PArrWord):boolean;
-var i, leng: integer;
-g420: TG420ReceivePack;
-g420Send: PG420Send;
-//item: PCommandItem;
-begin
-  result:=false;
-
-{  if (G420loopChB.Checked)and(comand=Comand_g420_ProgArr) then
-  begin
-    leng:=SizeOf(TG420ReceivePack);
-    g420Send:=@P_param[0];
-    g420.header.Prefix:=$12AF6599;
-    g420.header.Length:=leng;
-    g420.header.Target_ID:=0;
-    g420.header.Command:=Comand_g420_ProgArr;
-    g420.header.Response:=0;
-    g420.mess.dest_device:=g420Send.header.dest_device;
-    g420.mess.device_param:=g420Send.header.device_param;
-    g420.mess.Block_count:=1;
-    g420.mess.start_address:=g420Send.header.start_address;
-    g420.mess.prog_status:=0;
-//    g420.mess.prog_status:=$800000e4;
-//    ReceiveProgArrStatus(-16, SizeOf(TG420ReceiveMess), ParrTCP(@g420mess)^);
-    MyClientSocket.EmulReceiveBuf(g420, leng);
-    case g420Send.header.dest_device of
-      3: save_last_block:=g420Send.header.start_address+g420Send.header.arr_length-1;
-      4..7:
-      begin
-        if g420Send.header.start_address=save_last_block then
-        begin
-          g420.mess.device_param:=1;
-          g420.mess.start_address:=1234;
-          MyClientSocket.EmulReceiveBuf(g420, leng);
-        end;
-      end;
-    end;
-//    sleep(5);
-    result:=true;
-    exit;
-  end;      }
-
-  if not MyClientSocket.Connected then exit;
-
-
-  if count>MAX_OUT_MESS_PARAM then count:=MAX_OUT_MESS_PARAM;
-  if P_param=nil then count:=0;
-  leng:=16+2*count;
-//  mess:=AllocMem(leng);
-//  new(item);
-  mess.header.Prefix:=$12AF6599;
-  mess.header.Length:=leng;
-  mess.header.Target_ID:=target_id;
-  mess.header.Command:=comand;
-  mess.header.Response:=0;
-  for i:=0 to count-1 do mess.param[i]:=p_param[i];
-  move(P_param[0], mess.param[0], leng-16);
-
-  MyClientSocket.SendBuf(mess, leng);
-
-  result:=true;
-end;
-//------------------------------------------------------------------------------
-function TControlForm.SendCommandSys(target_id,comand:word): boolean;
-begin
-  result:=SendCommand(target_id,comand,0,nil);
-end;
-//------------------------------------------------------------------------------
-function TControlForm.SendCommandSysParam(target_id,comand,param:word): boolean;
-begin
-  result:=SendCommand(target_id,comand,1,@param);
 end;
 //------------------------------------------------------------------------------
 
@@ -653,6 +765,414 @@ begin
 
 //  if (DeviceErrorChB.Checked)and(Errors_Count <> 0) then
 //    SendCommandSys(0,Comand_Get_Device_Errors);
+end;
+//------------------------------------------------------------------------------
+function TControlForm.AddRequest(req_id: word):PRequest;
+begin
+  New(result);
+  result.request_id:=req_id;
+  result.blockcount:=0;
+  result.blocklength:=0;
+  result.length:=0;
+  result.time_live:=now+600.0/(24*3600); // время жизни буфера 600 секунд
+  result.prev:=nil;
+  result.next:=StartRequest;
+  if result.next<>nil then result.next.prev:=result;
+
+  StartRequest:=result;
+end;
+//------------------------------------------------------------------------------
+procedure TControlForm.DeleteRequest(PReq: PRequest);
+begin
+  if PReq=nil then exit;
+  if PReq.prev=nil then StartRequest:=PReq.next
+  else PReq.prev.next:=PReq.next;
+  if PReq.next<>nil then PReq.next.prev:=PReq.prev;
+  SetLength(PReq.blocks_ok,0);
+  SetLength(PReq.arr,0);
+  Dispose(PReq);// PReq:=nil;
+end;
+//------------------------------------------------------------------------------
+procedure TControlForm.ClearRequests;
+begin
+  while StartRequest<>nil do DeleteRequest(StartRequest);
+end;
+//------------------------------------------------------------------------------
+function TControlForm.GetRequest(req_id: word; make_new: boolean): PRequest;
+var count: integer;
+cur_time: TDateTime;
+next: PRequest;
+begin
+  result:=StartRequest; count:=0; cur_time:=now;
+  while result<>nil do
+  begin
+    inc(count);
+    if result.request_id = req_id then exit;
+    next:=result.next;
+    if cur_time>result.time_live then DeleteRequest(result);
+    result:=next;
+  end;
+
+  if make_new then
+  begin
+    if count>=MAX_REQUEST_BUF then
+    begin
+      ClearRequests;
+//      Memo1.Lines.Add('Превышено максимальное число буферов персональных сообщений (MAX_REQUEST_BUF='+IntToStr(MAX_REQUEST_BUF)+'), все буферы очищены');
+    end;
+    result:=AddRequest(req_id);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TControlForm.ReceivePersBuf(p,leng:integer; const ArrIn: TarrTCP);
+var i,len: integer;
+//st: string;
+header: PEthHeader;
+parr: PArrWord;
+begin
+//  exit;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if p+leng+16>=20000000 then
+  begin
+//    Memo1.Lines.Add('Персональное сообщение превысило размер TCP буфера');
+//    AddLogFile('Персональное сообщение превысило размер TCP буфера', 'atp_log.txt');
+    exit;
+  end;
+
+  header:=@ArrIn[p];
+//  AddLog('ReceivePersBuf; Command_ID='+Strg(fHex, header.Command_ID, 4));
+
+  parr:=@ArrIn[p+16];
+
+  i:=0;
+
+  while i<((leng-16)div 2)do
+  begin
+    len:=parr[i+1];
+    if i+len+2>(leng-16)div 2 then
+    begin
+//      Memo1.Lines.Add('Персональное сообщение вышло за пределы ethernet сообщения');
+//      AddLogFile('Персональное сообщение вышло за пределы ethernet сообщения', 'atp_log.txt');
+      exit;
+    end;
+    ReceiveRequestBlock(len,parr[i], @parr[i+2]);
+    inc(i,len+2);
+  end;
+end;
+//------------------------------------------------------------------------------
+procedure TControlForm.ReceiveRequestBlock(length,target: word; buf: pointer);
+const
+FIRST_BLOCK         = $8000;
+LONG_PERS_MESS_MODE = $2000;
+ODD_LENGTH          = $1000;
+var
+block: PReqBlock;
+blockLong: PReqBlockLong;
+req_id:word;
+i, start, ind, param: dword;
+pArr: pArrByte;
+PReq: PRequest;
+ba, data_leng_test: integer;
+data_leng, full_length, block_count: dword;
+st: string;
+begin
+
+  if length<3 then
+  begin
+    st:='Слишком маленькая длина персонального сообщения = '+IntToStr(length);
+    st:='target='+IntToStr(target)+'; '+st;
+//    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+  block:=buf;
+  req_id:=block.req_id;
+//  AddLogFile('receive ReqBlock: target='+IntToStr(target)+'; req_id='+Strg(fHex, req_id, 4)+'; leng='+IntToStr(length), 'req_log.txt');
+  if (block.mess_cod and LONG_PERS_MESS_MODE)=0 then
+  begin
+    param:=block.param;
+    pArr:=@block.arr[0];
+    data_leng_test:=(length-3)*2;
+  end
+  else
+  begin
+    if length<4 then
+    begin
+      st:='Слишком маленькая длина персонального сообщения = '+IntToStr(length);
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    blockLong:=buf;
+    param:=blockLong.param;
+    pArr:=@blockLong.arr[0];
+    data_leng_test:=(length-4)*2;
+  end;
+
+
+  if data_leng_test<=0 then
+  begin
+    st:='Слишком маленькая длина блока персонального сообщения = '+IntToStr(data_leng_test);
+    st:='target='+IntToStr(target)+'; '+'mess_cod='+IntToHex(block.mess_cod, 4)+'H; '+st;
+//    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+  data_leng:=dword(data_leng_test);
+
+  if data_leng>512 then
+  begin
+    st:='Слишком большая длина блока персонального сообщения (>512), length='+IntToStr(data_leng)+' байт';
+    st:='target='+IntToStr(target)+'; '+'mess_cod='+IntToHex(block.mess_cod, 4)+'H; '+st;
+//    Memo1.Lines.Add(st);
+//    AddLogFile(st, 'atp_log.txt');
+    exit;
+  end;
+
+//  AddLog('принят RequestBlock; req_id='+Strg(fHex, block.req_id, 4)+'; mess_cod='+
+//    Strg(fHex, block.mess_cod, 4)+'; param='+Strg(fHex, param, 8));
+
+  if req_id=$ffff then req_id:=target or $fffc;
+  if (block.mess_cod and FIRST_BLOCK)<>0 then  // первый блок
+  begin
+    if param>MAX_LENG_PERS_MESS then
+    begin
+      st:='Слишком большая длина персонального сообщения, length='+IntToStr(param)+' слов';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if param<1 then
+    begin
+      st:='Длина персонального сообщения = 0';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if data_leng>param*2 then
+    begin
+      st:='Длина блока превышает длину всего персонального сообщения';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    if (data_leng<param*2)and(param<100) then
+    begin
+      st:='Персональное сообщение длиной <200 байт не влезло в 1 блок';
+      st:='длина блока='+IntToStr(data_leng)+'; '+'длина сообщения='+IntToStr(param*2)+'; '+st;
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+
+    full_length:=param*2;
+    if (block.mess_cod and ODD_LENGTH)<>0 then dec(full_length);
+    block_count:=((full_length-1) div data_leng) + 1;
+    if block_count=1 then
+    begin
+ //     if targ_to_ba(target-1, ba) then if Board[ba]<>nil then
+ //       Board[ba].
+      GetPersMess(block.mess_cod and $4fff, req_id, full_length, @pArr[0]);
+      exit;
+    end;
+
+    pReq:=GetRequest(req_id,true);
+    if pReq=nil then
+    begin
+      st:='Функция GetRequest с параметром make_new=true возвратила пустой указатель';
+      st:='длина блока='+IntToStr(data_leng)+'; '+'длина сообщения='+IntToStr(param*2)+'; '+st;
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    pReq.length:=full_length;
+//    if (block.mess_cod and ODD_LENGTH)<>0 then dec(pReq.length);
+    pReq.blocklength:=data_leng;
+//    pReq.blockcount:=((pReq.length-1) div pReq.blocklength) + 1;
+    pReq.blockcount:=block_count;
+
+    SetLength(pReq.blocks_ok, pReq.blockcount);
+    SetLength(pReq.arr, pReq.length);
+    if data_leng>pReq.length then data_leng:=pReq.length; // превышение на 1 байт - штатная ситуация при нечетной длине сообщения
+    Move(pArr[0], pReq.arr[0], data_leng);
+    pReq.blocks_ok[0]:=true;
+    for i:=1 to pReq.blockcount-1 do pReq.blocks_ok[i]:=false;
+  end
+  else                                         // последующие блоки
+  begin
+    pReq:=GetRequest(req_id,false);
+    if pReq=nil then
+    begin
+      st:='Не найден буфер персонального сообщения для не первого блока';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    start:=param*2;
+    if (start<pReq.blocklength)or((start mod pReq.blocklength)<>0) then
+    begin
+      st:='Ошибочное смещение блока персонального сообщения для не первого блока';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+      exit;
+    end;
+    ind:=start div pReq.blocklength;
+    if (ind<pReq.blockcount)and(start<pReq.length) then
+    begin
+      if data_leng>pReq.length-start then data_leng:=pReq.length-start;
+      Move(pArr[0], pReq.arr[start], data_leng);
+      pReq.blocks_ok[ind]:=true;
+    end
+    else
+    begin
+      st:='Смещение блока превышает длину персонального сообщения';
+//      st:='target='+IntToStr(target)+'; '+'mess_cod='+Strg(fHex, block.mess_cod, 4)+'; '+st;
+//      Memo1.Lines.Add(st);
+//      AddLogFile(st, 'atp_log.txt');
+    end;
+  end;
+  for i:=1 to pReq.blockcount-1 do if not pReq.blocks_ok[i] then exit;
+//  if targ_to_ba(target-1, ba) then if Board[ba]<>nil then
+//    Board[ba].
+  GetPersMess(block.mess_cod and $4fff, req_id, pReq.length, @pReq.arr[0]);
+  DeleteRequest(pReq);
+end;
+//------------------------------------------------------------------------------
+
+procedure TControlForm.GetPersMess(mess_cod,req_id: word; leng: dword; buf: pointer);
+var
+ind, i: integer;
+st: string;
+arr_byte: PArrByte;
+fl: file;
+//report: PProgFlashReport;
+DebArrByte: PDebugArrByte;
+DebArrWord: PDebugArrWord;
+DebArrDword: PDebugArrDword;
+view_mode: byte;
+address: TAddressStruct;
+begin
+  case mess_cod of
+
+    DEBUG_ARRAY:
+    begin
+    (*    DebArrByte:=buf;
+        DebArrWord:=buf;
+        DebArrDword:=buf;
+        view_mode:=DebArrByte.view_mode;
+        if view_mode>0 then
+        begin
+          if (DebArrByte.port and $8000)>0 then
+          begin
+            ind:=$ffff-DebArrByte.port;
+            if ind>2 then view_mode:=0 else
+            begin
+              if not GetAddrFromInterface(address, ind) then view_mode:=0;
+            end;
+          end
+          else
+          begin
+            ind:=DebArrByte.port;
+            if (ind<AddrListBox.Count)and(ind<length(AddrList)) then
+              address:=AddrList[ind]
+            else view_mode:=0;
+          end;
+        end;
+        case DebArrByte.type_access of
+          0:  // byte
+          begin
+            case view_mode of
+              1:  // byte дамп c форматированием по переменным
+              begin
+                ViewDebugArrVarByte(DebArrByte, address);
+              end; // end view_mode=1
+              else  // byte простой дамп
+              begin
+                ViewDebugArrDumpByte(DebArrByte);
+              end; // end view_mode=0
+            end; // end case view_mode
+          end;  // end type_access=0 (byte)
+          1:  // word
+          begin
+            case view_mode of
+              1:  // word дамп c форматированием по переменным
+              begin
+                 ViewDebugArrVarWord(DebArrWord, address);
+              end;
+              else  // word простой дамп
+              begin
+                ViewDebugArrDumpWord(DebArrWord);
+              end;
+            end;
+          end; // end type_access=1 (word)
+          2:  // dword
+          begin
+            case view_mode of
+              1:  // dword дамп c форматированием по переменным
+              begin
+                ViewDebugArrVarDword(DebArrDword, address);
+              end;
+              else  // dword простой дамп
+              begin
+                ViewDebugArrDumpDword(DebArrDword);
+              end;
+            end;
+
+          end;  // end type_access=2 (dword)
+          else
+          begin
+
+          end;
+        end;
+    {    AddLog(CurTimeFine);
+        AddLog('request_id = '+Strg(fHex,req_id,4));
+        AddLog('Получен дамп, размер='+IntToStr(leng)+'; ('+IntToStr(leng div 192)+' пакетов)');
+        AssignFile(fl, 'buf_dump.mlt');
+        ReWrite(fl, 1);
+        BlockWrite(fl, PArrWord(buf)[0], leng);
+        CloseFile(fl);  }  *)
+    end;
+    T2MI_PARAM:
+    begin
+//      ShowMessage('length = '+IntToStr(leng));
+      if leng>=SizeOf(TT2MI_params) then T2miSetForm.ReceiveParam(buf);
+
+    end;
+    SIGNAL_DESCRIPTORS:
+    begin
+
+    end;
+
+
+    else
+    begin
+//      if b_d.Log.log_enable then
+      begin
+{        DebugMemo.Lines.Add('----------------------------------------------');
+        DebugMemo.Lines.Add(CurTimeFine);
+        DebugMemo.Lines.Add('request_id = '+Strg(fHex,req_id,4));
+        DebugMemo.Lines.Add('Получен неизвеcтный буфер');
+//        DebugMemo.Lines.Add('Target = '+Strg(fHex,targ+1,4));
+        DebugMemo.Lines.Add('Length = '+IntToStr(leng div 2)+' слов');
+        DebugMemo.Lines.Add('Command = '+Strg(fHex,mess_cod,4));
+        st:='';
+        for i:=0 to (leng div 2)-1 do
+        begin
+          st:=st+Strg(fHex,PArrWord(buf)[i],4)+' ';
+          if (i mod 8) = 7 then begin DebugMemo.Lines.Add(st); st:=''; end;
+        end;
+        if st<>'' then DebugMemo.Lines.Add(st);   }
+      end;
+    end;
+  end;
 end;
 //------------------------------------------------------------------------------
 procedure TControlForm.Button1Click(Sender: TObject);

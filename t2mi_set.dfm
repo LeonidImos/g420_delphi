@@ -11,24 +11,20 @@ object T2miSetForm: TT2miSetForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
-  object PageControl1: TPageControl
+  object SetPageControl: TPageControl
     Left = 0
     Top = 0
     Width = 521
     Height = 316
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 593
-    ExplicitHeight = 376
     object TabSheet1: TTabSheet
       Caption = #1056#1077#1078#1080#1084' T2-MI ('#1056#1077#1078#1080#1084' DVB-T2)'
-      ExplicitLeft = 0
-      ExplicitTop = 28
-      ExplicitWidth = 585
-      ExplicitHeight = 348
       object Label1: TLabel
         Left = 60
         Top = 24
@@ -252,6 +248,7 @@ object T2miSetForm: TT2miSetForm
         Width = 97
         Height = 21
         TabOrder = 14
+        Text = '1'
       end
       object NumSymbols_Edit: TEdit
         Left = 140
@@ -259,6 +256,7 @@ object T2miSetForm: TT2miSetForm
         Width = 97
         Height = 21
         TabOrder = 15
+        Text = '11'
       end
       object Band_Res_Edit: TEdit
         Left = 264
@@ -289,8 +287,6 @@ object T2miSetForm: TT2miSetForm
     object TabSheet2: TTabSheet
       Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' PLP'
       ImageIndex = 1
-      ExplicitWidth = 585
-      ExplicitHeight = 328
       object Label10: TLabel
         Left = 50
         Top = 71
@@ -504,8 +500,6 @@ object T2miSetForm: TT2miSetForm
     object TabSheet3: TTabSheet
       Caption = #1055#1088#1086#1095#1080#1077' '#1085#1072#1089#1090#1088#1086#1081#1082#1080
       ImageIndex = 2
-      ExplicitWidth = 585
-      ExplicitHeight = 348
       object Label18: TLabel
         Left = 55
         Top = 19
@@ -715,42 +709,107 @@ object T2miSetForm: TT2miSetForm
     Height = 38
     Align = alBottom
     TabOrder = 1
-    ExplicitTop = 376
-    ExplicitWidth = 593
     object Panel2: TPanel
-      Left = 196
+      Left = 184
       Top = 1
-      Width = 324
+      Width = 336
       Height = 36
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitLeft = 268
-      ExplicitHeight = 56
-      object Button1: TButton
-        Left = 236
+      object DataImage: TImage
+        Left = 34
+        Top = 8
+        Width = 16
+        Height = 16
+        Hint = #1048#1085#1076#1080#1082#1072#1090#1086#1088' '#1086#1073#1084#1077#1085#1072' '#1076#1072#1085#1085#1099#1084#1080' '#1089' '#1072#1085#1072#1083#1080#1079#1072#1090#1086#1088#1086#1084
+        Enabled = False
+        ParentShowHint = False
+        Picture.Data = {
+          07544269746D617036030000424D360300000000000036000000280000001000
+          000010000000010018000000000000030000120B0000120B0000000000000000
+          0000008080008080008080008080008080008080008080008080008080008080
+          0080800080800080800080800080800080800080800080800080800080800080
+          8000000000000000000000000000000000808000808000808000808000808000
+          8080008080008080008080000000000000BFBFBFBFBFBF7F7F7F7F7F7F7F7F7F
+          000000000000008080008080008080008080008080008080000000BFBFBFBFBF
+          BF7F7F7F0000000000000000007F7F7F7F7F7F7F7F7F00000000808000808000
+          8080008080000000BFBFBFBFBFBF000000000000000000000000000000000000
+          0000007F7F7F7F7F7F000000008080008080008080000000BFBFBF0000000000
+          000000000000000000000000000000000000000000007F7F7F00000000808000
+          8080000000BFBFBF7F7F7F000000000000000000008000008000008000000000
+          0000000000007F7F7F7F7F7F000000008080000000BFBFBF0000000000000000
+          000080000080000080000080000080000000000000000000007F7F7F00000000
+          8080000000FFFFFF000000000000000000008000008000008000008000008000
+          0000000000000000007F7F7F000000008080000000FFFFFF0000000000000000
+          00BFBFBF008000008000008000008000000000000000000000BFBFBF00000000
+          8080000000FFFFFF7F7F7F000000000000000000BFBFBFBFBFBF008000000000
+          0000000000007F7F7FBFBFBF000000008080008080000000BFBFBF0000000000
+          00000000000000000000000000000000000000000000BFBFBF00000000808000
+          8080008080000000FFFFFFBFBFBF000000000000000000000000000000000000
+          000000BFBFBFBFBFBF000000008080008080008080008080000000FFFFFFBFBF
+          BF7F7F7F0000000000000000007F7F7FBFBFBFBFBFBF00000000808000808000
+          8080008080008080008080000000000000FFFFFFFFFFFFFFFFFFBFBFBFBFBFBF
+          0000000000000080800080800080800080800080800080800080800080800080
+          8000000000000000000000000000000000808000808000808000808000808000
+          8080}
+        ShowHint = True
+        Transparent = True
+      end
+      object Label26: TLabel
+        Left = 56
+        Top = 10
+        Width = 28
+        Height = 13
+        Caption = 'T2-MI'
+      end
+      object ApplyButton: TButton
+        Left = 252
         Top = 5
         Width = 75
         Height = 21
         Caption = #1055#1088#1080#1084#1077#1085#1080#1090#1100
         TabOrder = 0
+        OnClick = ApplyButtonClick
       end
-      object Button2: TButton
-        Left = 144
+      object UpDateButton: TButton
+        Left = 171
         Top = 5
         Width = 75
         Height = 21
         Caption = #1054#1073#1085#1086#1074#1080#1090#1100
         TabOrder = 1
+        OnClick = UpDateButtonClick
       end
-      object Button3: TButton
-        Left = 52
+      object OnButton: TButton
+        Left = 90
         Top = 5
         Width = 75
         Height = 21
         Caption = #1042#1082#1083#1102#1095#1080#1090#1100
         TabOrder = 2
+        OnClick = OnButtonClick
       end
+    end
+    object Test1Button: TButton
+      Left = 16
+      Top = 6
+      Width = 75
+      Height = 25
+      Caption = 'test1'
+      TabOrder = 1
+      Visible = False
+      OnClick = Test1ButtonClick
+    end
+    object Test2Button: TButton
+      Left = 97
+      Top = 6
+      Width = 75
+      Height = 25
+      Caption = 'test2'
+      TabOrder = 2
+      Visible = False
+      OnClick = Test2ButtonClick
     end
   end
 end

@@ -46,7 +46,10 @@ G420_MAX_PROG_LIST = 200;
   DSP_Comand_Get_Array               = $030E;
   DSP_Comand_Set_T2MI_Param          = $0350;
   DSP_Comand_Get_Signal_Descriptors  = $0351;
-  DEBUG_ARRAY       = $430E;
+
+  DEBUG_ARRAY         = $430E;
+  T2MI_PARAM			    = $4350;
+  SIGNAL_DESCRIPTORS	= $4351;
 
 
 // (Target_id=1..4)

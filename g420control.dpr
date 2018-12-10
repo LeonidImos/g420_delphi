@@ -3,7 +3,9 @@ program g420control;
 uses
   Forms,
   main_control in 'main_control.pas' {ControlForm},
-  t2mi_set in 't2mi_set.pas' {T2miSetForm};
+  t2mi_set in 't2mi_set.pas' {T2miSetForm},
+  const_type in 'const_type.pas',
+  leds in 'leds.pas';
 
 {$R *.res}
 
