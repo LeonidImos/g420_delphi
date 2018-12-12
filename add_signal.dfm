@@ -118,7 +118,8 @@ object AddSigmalForm: TAddSigmalForm
       'MPEG-4'
       'SDI'
       'HD-SDI'
-      'Test MPEG')
+      'Test MPEG'
+      #1055#1088#1086#1074#1077#1088#1082#1072)
   end
   object SigTypeCbB: TComboBox
     Left = 243

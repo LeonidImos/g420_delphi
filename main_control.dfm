@@ -115,14 +115,14 @@ object ControlForm: TControlForm
         TabOrder = 1
         OnClick = CheckBox1Click
       end
-      object Button1: TButton
+      object t2miSetButton: TButton
         Left = 392
         Top = 10
         Width = 125
         Height = 21
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' T2-MI...'
         TabOrder = 2
-        OnClick = Button1Click
+        OnClick = t2miSetButtonClick
       end
     end
     object ListBox1: TListBox

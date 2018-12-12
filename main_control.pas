@@ -40,7 +40,7 @@ type
     g420_bitrateOutEdit: TEdit;
     CheckBox1: TCheckBox;
     Label1: TLabel;
-    Button1: TButton;
+    t2miSetButton: TButton;
     procedure FormCreate(Sender: TObject);
     procedure TabControl1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -48,7 +48,7 @@ type
     procedure SpeedButton1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure ListBox1Click(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure t2miSetButtonClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
   private
     { Private declarations }
@@ -65,6 +65,7 @@ type
     ArrInPos: integer;
 //    mess: TMessOut;
     sig_info: array of TPage;
+    ListName: array[0..15]of string;
     old_page: integer;
     IdleSleepTime: TDateTime;
 //    request_id: word;
@@ -101,9 +102,15 @@ type
     procedure EnCrypt16(pass: string; var arr: tPassword);
     function DeCrypt16(arr: tPassword): string;
     procedure LoadSignal;
+    procedure AddSignal(name: string; sig_id: dword);
+    procedure LoadSignal2;
     procedure ShowPage;
     procedure LoadParamFromFile;
     procedure SaveParamToFile;
+    procedure pars_descriptors(leng_mess: integer; buf: pointer);
+    procedure pars_parametrs(leng_mess: integer; buf: pointer);
+
+    function GetName(dcr: PSigDescriptor): string;
   public
     { Public declarations }
   end;
@@ -292,7 +299,7 @@ begin
   SendDeviceInfoTime:=IdleSleepTime;
   SendStatusTime:=IdleSleepTime;
   SendDeviceError:=IdleSleepTime;
-  LoadSignal;
+  LoadSignal2;
   LoadParamFromFile;
   Application.OnIdle:=ApplicationIdle;
 end;
@@ -412,6 +419,7 @@ begin
     SendCommandSysParam(Target0, Comand_Set_Device_Mode, 1);
     param:=0;
     SendCommandDSP(0, DSP_Comand_Set_T2MI_Param, 1, @param);
+    SendCommandDSP(0, DSP_Comand_Get_Signal_Descriptors, 0, nil);
     wath_dog:=10;
   end;
 
@@ -1148,7 +1156,13 @@ begin
     end;
     SIGNAL_DESCRIPTORS:
     begin
-
+//      ShowMessage('length = '+IntToStr(leng));
+      pars_descriptors(leng, buf);
+    end;
+    SIGNAL_PARAMETRS:
+    begin
+//      ShowMessage('length = '+IntToStr(leng));
+      pars_parametrs(leng, buf);
     end;
 
 
@@ -1175,7 +1189,7 @@ begin
   end;
 end;
 //------------------------------------------------------------------------------
-procedure TControlForm.Button1Click(Sender: TObject);
+procedure TControlForm.t2miSetButtonClick(Sender: TObject);
 begin
   T2miSetForm.ShowModal;
 end;
@@ -1349,6 +1363,175 @@ begin
   ShowPage;
 end;
 //------------------------------------------------------------------------------
+procedure TControlForm.AddSignal(name: string; sig_id: dword);
+var
+list_ind, page_ind, sig_id_type, i, page_count, sig_count: integer;
+sig_id_num: dword;
+found: boolean;
+begin
+  sig_id_num:=sig_id and $00ffffff;
+  sig_id_type:=(sig_id shr 28)and $f;
+  list_ind:=(sig_id shr 24)and $f;
+  // ищем список
+  page_count:=length(sig_info);
+  found:=false;
+  for i:=0 to page_count-1 do
+    if sig_info[i].list_ind=list_ind then
+    begin
+      found:=true;
+      page_ind:=i;
+      break;
+    end;
+  // если не нашли, добавляем
+  if not found then
+  begin
+    if sig_id_type=$f then
+    begin
+      while name[length(name)]=' ' do delete(name, length(name), 1);
+
+      ListName[list_ind]:=name;
+      exit;
+    end;
+    page_ind:=page_count;
+    TabControl1.Tabs.Add(ListName[list_ind]);
+    SetLength(sig_info, page_count+1);
+    sig_info[page_ind].cur_ind:=0;
+    sig_info[page_ind].list_ind:=list_ind;
+    SetLength(sig_info[page_ind].list, 0);
+  end;
+  // добавляем сигнал или имя списка
+  if sig_id_type=$f then // имя списка
+  begin
+    TabControl1.Tabs.Strings[page_ind]:=name;
+  end
+  else // добавляем сигнал
+  begin
+    sig_count:=Length(sig_info[page_ind].list);
+    SetLength(sig_info[page_ind].list, sig_count+1);
+    sig_info[page_ind].list[sig_count].name:=name;
+    sig_info[page_ind].list[sig_count].sig_id:=sig_id;
+    sig_info[page_ind].list[sig_count].sig_id_num:=sig_id_num;
+    sig_info[page_ind].list[sig_count].sig_id_type:=sig_id_type;
+    sig_info[page_ind].list[sig_count].list_ind:=list_ind;
+  end;
+end;
+//------------------------------------------------------------------------------
+
+procedure TControlForm.LoadSignal2;
+var
+//signals: array of TSignal;
+//lists: array[0..15] of TListSignal;
+//linds: array[0..15] of integer;
+sig_count, list_count, page_count, si, li, pi, sind, lind, pind: integer;
+ini: TIniFile;
+sect, st: string;
+sig_id_num, sig_id: dword;
+sig_id_type: integer;
+begin
+  if not FileExists(SigListFileName) then
+  begin
+    st:=Copy(SigListFileName, length(ExtractFilePath(SigListFileName))+1, 255);
+    ShowMessage('Не найден файл "'+st+'"');
+  end;
+
+  ini:=TIniFile.Create(SigListFileName);
+  sig_count:=ini.ReadInteger('main', 'signal_count', 0);
+  list_count:=ini.ReadInteger('main', 'list_count', 0);
+//  SetLength(signals, sig_count);
+
+{  for li:=0 to 15 do
+  begin
+    lists[li].title:='List_'+IntToStr(li);
+    lists[li].count:=0;
+    lists[li].index:=li;
+  end;   }
+  page_count:=length(sig_info);
+  for pi:=0 to page_count-1 do SetLength(sig_info[pi].list, 0);
+  SetLength(sig_info, 0);
+  TabControl1.Tabs.Clear;
+
+  for li:=0 to 15 do ListName[li]:='LIST_'+IntToStr(li);
+
+  for li:=0 to list_count-1 do
+  begin
+    st:=ini.ReadString('main', 'list_'+IntToStr(li), 'List_'+IntToStr(li));
+    sig_id:=$f0000000+((li and 15) shl 24);
+    AddSignal(st, sig_id);
+  end;
+
+  for si:=0 to sig_count-1 do
+  begin
+    sect:='signal_'+IntToStr(si);
+    st:=ini.ReadString(sect, 'name', sect);
+    sig_id_num:=ini.ReadInteger(sect, 'sig_id_num', 0);
+    sig_id_type:=ini.ReadInteger(sect, 'sig_id_type', 0)and $0f;
+    lind:=ini.ReadInteger(sect, 'list_ind', 0)and $0f;
+    sig_id:=((sig_id_type and 15) shl 28) + ((lind and 15) shl 24) + sig_id_num;
+    AddSignal(st, sig_id);
+  end;
+
+{  for si:=0 to sig_count-1 do
+  begin
+    sect:='signal_'+IntToStr(si);
+    signals[si].name:=ini.ReadString(sect, 'name', sect);
+    sig_id_num:=ini.ReadInteger(sect, 'sig_id_num', 0);
+    sig_id_type:=ini.ReadInteger(sect, 'sig_id_type', 0)and $0f;
+    lind:=ini.ReadInteger(sect, 'list_ind', 0)and $0f;
+
+    signals[si].sig_id_num:=sig_id_num;
+    signals[si].sig_id_type:=sig_id_type;
+    signals[si].list_ind:=lind;
+    signals[si].sig_id:=sig_id_num + (sig_id_type shl 28);
+    if sig_id_num>0 then
+    begin
+      inc(lists[lind].count);
+    end;
+  end;
+
+  ini.Destroy;
+
+  pind:=0;
+  for li:=0 to 15 do
+  begin
+    if lists[li].count>0 then
+    begin
+      TabControl1.Tabs.Add(lists[li].title);
+      linds[pind]:=li;
+      lists[li].index:=pind;
+      inc(pind);
+    end;
+  end;
+
+  page_count:=TabControl1.Tabs.Count;
+  SetLength(sig_info, page_count);
+  for pi:=0 to page_count-1 do
+  begin
+    lind:=linds[pi];
+    SetLength(sig_info[pi].list, lists[lind].count);
+    sig_info[pi].cur_ind:=0;
+    sig_info[pi].list_ind:=lind;
+  end;
+
+  for si:=0 to sig_count-1 do
+  begin
+    if signals[si].sig_id_num>0 then
+    begin
+      lind:=signals[si].list_ind;
+      pind:=lists[lind].index;
+      sind:=sig_info[pind].cur_ind;
+      if sind<length(sig_info[pind].list) then
+      begin
+        sig_info[pind].list[sind]:=signals[si];
+        sig_info[pind].cur_ind:=sind+1;
+      end;
+    end;
+  end;
+  for pi:=0 to page_count-1 do sig_info[pi].cur_ind:=0;    }
+
+  old_page:=-1;
+  ShowPage;
+end;
+//------------------------------------------------------------------------------
 procedure TControlForm.ShowPage;
 var pind, {sind, }page_count, sig_count, i, cur_ind: integer;
 begin
@@ -1445,11 +1628,13 @@ begin
       CheckBox1.Visible:=true;
       g420_bitrateOutEdit.Visible:=true;
       g420_bitrateOutEdit.Enabled:=CheckBox1.Checked;
+      t2miSetButton.Visible:=true;
   end
   else
   begin
       CheckBox1.Visible:=false;
       g420_bitrateOutEdit.Visible:=false;
+      t2miSetButton.Visible:=false;
   end;
 end;
 //------------------------------------------------------------------------------
@@ -1472,6 +1657,79 @@ begin
   ini.WriteString('main', 'bitrate', g420_bitrateOutEdit.Text);
   ini.WriteBool('main', 'bitrate_change', CheckBox1.Checked);
   ini.Destroy;
+end;
+//------------------------------------------------------------------------------
+procedure TControlForm.pars_descriptors(leng_mess: integer; buf: pointer);
+var
+p_dcr: PSigDescriptor;
+sig_id: dword;
+i, sig_id_type, prog_count, br_count, page_count, leng: integer;
+st: string;
+param: word;
+begin
+  p_dcr:=buf;
+
+  page_count:=length(sig_info);
+  for i:=0 to page_count-1 do SetLength(sig_info[i].list, 0);
+  SetLength(sig_info, 0);
+  TabControl1.Tabs.Clear;
+  for i:=0 to 15 do ListName[i]:='LIST_'+IntToStr(i);
+
+  i:=0;
+  while i<leng_mess do
+  begin
+    st:=GetName(p_dcr);
+    sig_id:=p_dcr.sig_id;
+    AddSignal(st, sig_id);
+    sig_id_type:=(sig_id shr 28)and $f;
+    leng:=16;
+    if sig_id_type<8 then // MPEG
+    begin
+      inc(leng, 16);
+      prog_count:=p_dcr.prog_info and $7f;
+      br_count:=p_dcr.br_count; if br_count<1 then br_count:=1;
+      inc(leng, prog_count*2 + br_count*16);
+    end
+    else if sig_id_type<15 then // SDI
+    begin
+      inc(leng, 32);
+    end;
+    inc(i, leng);
+
+    p_dcr:=pointer(dword(p_dcr) + leng);
+  end;
+
+  sig_id:=p_dcr.sig_id;
+
+  old_page:=-1;
+  ShowPage;
+
+  param:=1;
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Parametrs, 1, @param);
+end;
+//------------------------------------------------------------------------------
+function TControlForm.GetName(dcr: PSigDescriptor): string;
+var i: integer;
+b: byte;
+begin
+  result:='';
+  for i:=0 to 11 do
+  begin
+    b:=dcr.name[i];
+    case b of
+        0: break;
+        $21..$7f: result:=result+AnsiChar(b);
+        $a0..$c7: result:=result+AnsiChar(ch_cnst_inv1[b-$a0]);
+        $e0..$e7: result:=result+AnsiChar(ch_cnst_inv2[b-$e0]);
+      else result:=result+' ';
+    end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+procedure TControlForm.pars_parametrs(leng_mess: integer; buf: pointer);
+begin
+
 end;
 //------------------------------------------------------------------------------
 

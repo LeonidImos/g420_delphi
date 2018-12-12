@@ -25,7 +25,6 @@ object VisForm: TVisForm
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitLeft = 795
     object GroupBox3: TGroupBox
       Left = 12
       Top = 75
@@ -152,7 +151,7 @@ object VisForm: TVisForm
         Top = 15
         Width = 369
         Height = 276
-        ActivePage = TabSheet1
+        ActivePage = TabSheet2
         Align = alClient
         TabOrder = 0
         object TabSheet1: TTabSheet
@@ -560,7 +559,6 @@ object VisForm: TVisForm
     Height = 605
     Align = alClient
     TabOrder = 1
-    ExplicitWidth = 795
   end
   object Panel2: TPanel
     Left = 0
@@ -570,7 +568,6 @@ object VisForm: TVisForm
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitWidth = 795
     object PageControl: TPageControl
       Left = 0
       Top = 0
@@ -579,10 +576,12 @@ object VisForm: TVisForm
       ActivePage = TabSheet4
       Align = alClient
       TabOrder = 0
-      ExplicitWidth = 795
       object TabSheet3: TTabSheet
         Caption = #1086#1073#1097#1080#1081' '#1083#1086#1075
-        ExplicitWidth = 787
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Memo1: TMemo
           Left = 0
           Top = 81
@@ -597,7 +596,6 @@ object VisForm: TVisForm
           ParentFont = False
           ScrollBars = ssVertical
           TabOrder = 0
-          ExplicitWidth = 787
         end
         object Panel7: TPanel
           Left = 0
@@ -607,7 +605,6 @@ object VisForm: TVisForm
           Align = alTop
           BevelOuter = bvNone
           TabOrder = 1
-          ExplicitWidth = 787
           object MemoClearButton: TButton
             Left = 12
             Top = 12
@@ -665,7 +662,6 @@ object VisForm: TVisForm
       object TabSheet4: TTabSheet
         Caption = #1086#1090#1083#1072#1076#1082#1072
         ImageIndex = 1
-        ExplicitWidth = 787
         object Splitter1: TSplitter
           Left = 0
           Top = 220
@@ -690,7 +686,6 @@ object VisForm: TVisForm
           ParentFont = False
           ScrollBars = ssBoth
           TabOrder = 0
-          ExplicitWidth = 787
         end
         object DebugHeaderPanel: TPanel
           Left = 0
@@ -701,7 +696,6 @@ object VisForm: TVisForm
           BevelOuter = bvNone
           Constraints.MinHeight = 220
           TabOrder = 1
-          ExplicitWidth = 787
           object Splitter2: TSplitter
             Left = 200
             Top = 0
@@ -799,7 +793,6 @@ object VisForm: TVisForm
             Align = alClient
             BevelInner = bvLowered
             TabOrder = 1
-            ExplicitWidth = 581
             object Label5: TLabel
               Left = 236
               Top = 43
@@ -1011,11 +1004,18 @@ object VisForm: TVisForm
               OnClick = WriteSBClick
             end
             object SpeedButton19: TSpeedButton
-              Left = 568
+              Left = 556
               Top = 36
               Width = 23
               Height = 22
               OnClick = SpeedButton19Click
+            end
+            object SpeedButton20: TSpeedButton
+              Left = 582
+              Top = 36
+              Width = 23
+              Height = 22
+              OnClick = SpeedButton20Click
             end
             object NameEdit1: TEdit
               Left = 47
@@ -1342,7 +1342,7 @@ object VisForm: TVisForm
     Left = 460
     Top = 368
     Bitmap = {
-      494C010102000800D40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800E40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -159,6 +159,7 @@ type
     Button11: TButton;
     Edit2: TEdit;
     SpeedButton19: TSpeedButton;
+    SpeedButton20: TSpeedButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ConnectButtonClick(Sender: TObject);
@@ -202,6 +203,7 @@ type
     procedure Button8Click(Sender: TObject);
     procedure Button11Click(Sender: TObject);
     procedure SpeedButton19Click(Sender: TObject);
+    procedure SpeedButton20Click(Sender: TObject);
   private
     { Private declarations }
     MyClientSocket: TMyClientSocket;
@@ -299,6 +301,7 @@ type
     procedure AddAddrStruct(addr: TAddressStruct);
     function AddrToText(const addr: TAddressStruct): string;
     procedure GetAddrToEdit(addr: TAddressStruct; edit_ind: integer);
+    procedure NameToArr(aName: AnsiString; max_leng: integer; arr: pArrByte);
   public
     { Public declarations }
   end;
@@ -667,10 +670,19 @@ begin
     end;
   end;
 end;
+//------------------------------------------------------------------------------
 procedure TVisForm.SpeedButton19Click(Sender: TObject);
 begin
   SendCommandDSP(0, DSP_Comand_Get_Signal_Descriptors, 0, nil);
 
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.SpeedButton20Click(Sender: TObject);
+var param: word;
+begin
+  param:=StrToInt(Edit2.Text);
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Parametrs, 1, @param);
 end;
 
 //------------------------------------------------------------------------------
@@ -969,26 +981,15 @@ begin
   end;
 end;
 //------------------------------------------------------------------------------
-
-procedure TVisForm.Button9Click(Sender: TObject);
-const ch_cnst: array[0..63]of byte = ($41, $a0, $42, $a1, $e0, $45, $a3, $a4,
-                                      $a5, $a6, $4b, $a7, $4d, $48, $4f, $a8,
-                                      $50, $43, $54, $a9, $aa, $58, $e1, $ab,
-                                      $ac, $e2, $ad, $ae, $62, $af, $b0, $b1,
-                                      $61, $b2, $b3, $b4, $e3, $65, $b6, $b7,
-                                      $b8, $b9, $ba, $bb, $bc, $bd, $6f, $be,
-                                      $70, $63, $bf, $79, $e4, $78, $e5, $c0,
-                                      $c1, $e6, $c2, $c3, $c4, $c5, $c6, $c7);
-var st: AnsiString;
-st2: string;
-i: integer;
+procedure TVisForm.NameToArr(aName: AnsiString; max_leng: integer; arr: pArrByte);
+var i, leng: integer;
 b, b2: byte;
 begin
-  st:=Edit1.Text;
-  st2:='';
-  for i:=1 to Length(st) do
+  leng:=Length(aName);
+  if leng>max_leng then leng:=max_leng;
+  for i:=0 to leng-1 do
   begin
-    b:=ord(st[i]);
+    b:=ord(aName[i+1]);
     case b of
       $21..$7f: b2:=b;
       $A8: b2:=$a2;
@@ -996,12 +997,50 @@ begin
       $C0..$FF: b2:=ch_cnst[b-$c0];
       else b2:=$20;
     end;
-    st2:=st2+'0x'+IntToHex(b2, 2);
+    arr[i]:=b2;
+  end;
+  for i:=leng to max_leng-1 do arr[i]:=$20;
+
+end;
+//------------------------------------------------------------------------------
+
+procedure TVisForm.Button9Click(Sender: TObject);
+{const ch_cnst: array[0..63]of byte = ($41, $a0, $42, $a1, $e0, $45, $a3, $a4,
+                                      $a5, $a6, $4b, $a7, $4d, $48, $4f, $a8,
+                                      $50, $43, $54, $a9, $aa, $58, $e1, $ab,
+                                      $ac, $e2, $ad, $ae, $62, $af, $b0, $b1,
+                                      $61, $b2, $b3, $b4, $e3, $65, $b6, $b7,
+                                      $b8, $b9, $ba, $bb, $bc, $bd, $6f, $be,
+                                      $70, $63, $bf, $79, $e4, $78, $e5, $c0,
+                                      $c1, $e6, $c2, $c3, $c4, $c5, $c6, $c7);  }
+var st: AnsiString;
+st2: string;
+i, leng: integer;
+b, b2: byte;
+arr: array[0..31] of byte;
+begin
+  st:=Edit1.Text;
+  leng:=Length(st);
+  NameToArr(st, 32, @arr[0]);
+  st2:='';
+//  for i:=1 to Length(st) do
+  for i:=0 to leng-1 do
+  begin
+{    b:=ord(st[i]);
+    case b of
+      $21..$7f: b2:=b;
+      $A8: b2:=$a2;
+      $B8: b2:=$b5;
+      $C0..$FF: b2:=ch_cnst[b-$c0];
+      else b2:=$20;
+    end;     }
+//    st2:=st2+'0x'+IntToHex(b2, 2);
+    st2:=st2+'0x'+IntToHex(arr[i], 2);
 //    if i<>Length(st) then
     st2:=st2+', '
   end;
   st2:=st2+'0x00';
-  st2:='['+IntToStr(Length(st)+1)+'] = {'+st2+'};';
+  st2:='['+IntToStr(leng+1)+'] = {'+st2+'};';
   st2:=st2+'  //('+st+')';
   Memo1.Lines.Add(st2);
 end;
@@ -2864,8 +2903,8 @@ begin
       ast:=AddSigmalForm.SigListCbB.Items[i]
     else ast:='Menu_'+IntToStr(i+1);
     ast:=ast+'            ';
-//    if length(ast)>12 then Delete(ast, 13, 255);
-    for k:=0 to 11 do list_descriptor[d_ind+k]:=ord(ast[k+1]);
+    NameToArr(ast, 12, @list_descriptor[d_ind]);
+//    for k:=0 to 11 do list_descriptor[d_ind+k]:=ord(ast[k+1]);
     inc(d_ind, 12);
     for k:=1 to 3 do list_descriptor[d_ind+k]:=0;
     list_descriptor[d_ind+3]:=$f0 + i;
@@ -2875,8 +2914,8 @@ begin
   for i:=0 to Length(SignalList)-1 do
   begin
     ast:=SignalList[i].signal.name+'            ';
-//    if length(ast)>12 then Delete(ast, 13, 255);
-    for k:=0 to 11 do list_descriptor[d_ind+k]:=ord(ast[k+1]);
+    NameToArr(ast, 12, @list_descriptor[d_ind]);
+//    for k:=0 to 11 do list_descriptor[d_ind+k]:=ord(ast[k+1]);
     inc(d_ind, 12);
     dw:=SignalList[i].signal.sig_id_num;
     dw:=dw or ((SignalList[i].signal.sig_id_type) shl 28);

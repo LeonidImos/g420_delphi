@@ -39,17 +39,25 @@ G420_MAX_PROG_LIST = 200;
   Comand_Send_Info        = $8002;
 
   DSP_Comand_BlackFin_Reset          = $0117;
-  DSP_Comand_Write_Data              = $0118;
-  DSP_Comand_Set_T2MI_Param_part1    = $0150;
-  DSP_Comand_Set_T2MI_Param_part2    = $0151;
-  DSP_Comand_Set_T2MI_Param_part3    = $0152;
-  DSP_Comand_Get_Array               = $030E;
-  DSP_Comand_Set_T2MI_Param          = $0350;
+  DSP_Comand_Write_Data              = $0118;	// param[1] - type_access (0-byte;1-word;2-dword), param[2] - start_addr(lo),
+						                          				// param[3] - start_addr(hi); param[4] - data(lo), param[5] - data(hi);
+  DSP_Comand_Set_T2MI_Param_part1    = $0150; // param[1]-param[16] - первая часть параметров
+  DSP_Comand_Set_T2MI_Param_part2    = $0151; // param[1]-param[16] - вторая часть параметров
+  DSP_Comand_Set_T2MI_Param_part3    = $0152; // param[1]-param[16] - третья часть параметров
+  DSP_Comand_Get_Array               = $030E;	// param[1] - type_access (0-byte;1-word;2-dword),  param[2]-port(кто запросил),
+                                              // param[3] - start_addr(lo), param[4] - start_addr(hi);
+                                              // param[5] - length(lo)(в байтах), param[6] - length(hi)(в байтах);
+  DSP_Comand_Set_T2MI_Param          = $0350; // param[1] - действие(0-только прочитать; 2-выключить; 3-включить;
+                                              // 4-применить настройки из remote_param_t2mi;
+                                              // 6-применить настройки из remote_param_t2mi и выключить;
+                                              // 7-применить настройки из remote_param_t2mi и включить)
   DSP_Comand_Get_Signal_Descriptors  = $0351;
+  DSP_Comand_Get_Signal_Parametrs    = $0352; // param[1] - детализация (0-только режим; 1-режим и битрейты; 2-все параметры)
 
   DEBUG_ARRAY         = $430E;
   T2MI_PARAM			    = $4350;
   SIGNAL_DESCRIPTORS	= $4351;
+  SIGNAL_PARAMETRS    = $4352;
 
 
 // (Target_id=1..4)
@@ -146,6 +154,21 @@ SIG_FLAG_NO_CORRECT_PCR      = $02;
 SIG_FLAG_NO_INSERT_NULL_PACK = $04;
 SIG_FLAG_SDI_PACK            = $80;
 
+ch_cnst: array[0..63]of byte = ($41, $a0, $42, $a1, $e0, $45, $a3, $a4,
+                                $a5, $a6, $4b, $a7, $4d, $48, $4f, $a8,
+                                $50, $43, $54, $a9, $aa, $58, $e1, $ab,
+                                $ac, $e2, $ad, $ae, $62, $af, $b0, $b1,
+                                $61, $b2, $b3, $b4, $e3, $65, $b6, $b7,
+                                $b8, $b9, $ba, $bb, $bc, $bd, $6f, $be,
+                                $70, $63, $bf, $79, $e4, $78, $e5, $c0,
+                                $c1, $e6, $c2, $c3, $c4, $c5, $c6, $c7);
+
+ch_cnst_inv1: array[0..39]of byte = ($c1, $c3, $a8, $c6, $c7, $c8, $c9, $cb,
+                                     $cf, $d3, $d4, $d7, $d8, $da, $db, $dd,
+                                     $de, $df, $e1, $e2, $e3, $b8, $e6, $e7,
+                                     $e8, $e9, $ea, $eb, $ec, $ed, $ef, $f2,
+                                     $f7, $f8, $fa, $fb, $fc, $fd, $fe, $ff);
+ch_cnst_inv2: array[0..6]of byte = ($c4, $d6, $d9, $e4, $f4, $f6, $f9);
 
 type
   ParrTCP = ^TarrTCP;
@@ -580,6 +603,38 @@ type
   POptionsInit_v3 = ^TOptionsInit_v3;
   TOptionsInit_v3 = array[0..MAX_OPT_ARR-1]of tOptInit;
 
+  PSigDescriptor = ^TSigDescriptor;
+  TSigDescriptor = packed record
+    name: array[0..11]of byte;
+    sig_id: dword;
+    prog_info: byte;
+    br_count: byte;
+    table_pres: word;
+    min_bitrate: dword;
+    flags_mpeg: byte;
+    reserv: array[0..6]of byte;
+  end;
+
+  TSigParamOneShort = packed record
+    sig_id:dword;
+    br: dword;
+    table_on: word;
+  end;
+
+  PSigParamsShort = ^TSigParamsShort;
+  TSigParamsShort = packed record
+    req_type: word;
+    signal_count: word;
+    item_leng: word;
+    Cur_list: word;
+    Cur_signal: word;
+    Cur_format: byte;
+    Cur_nit_standart: byte;
+    br_out: dword;
+    reserv1: word;
+    reserv2: word;
+    sig_params: array[0..1600]of TSigParamOneShort;
+  end;
 
 implementation
 
