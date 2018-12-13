@@ -156,6 +156,10 @@ object VisForm: TVisForm
         TabOrder = 0
         object TabSheet1: TTabSheet
           Caption = #1056#1091#1095#1085#1086#1077
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object Label1: TLabel
             Left = 12
             Top = 53
@@ -312,6 +316,10 @@ object VisForm: TVisForm
         object TabSheet2: TTabSheet
           Caption = #1057#1087#1080#1089#1082#1086#1084' '#1089#1080#1075#1085#1072#1083#1086#1074
           ImageIndex = 1
+          ExplicitLeft = 0
+          ExplicitTop = 0
+          ExplicitWidth = 0
+          ExplicitHeight = 0
           object Panel4: TPanel
             Left = 192
             Top = 0
@@ -662,6 +670,10 @@ object VisForm: TVisForm
       object TabSheet4: TTabSheet
         Caption = #1086#1090#1083#1072#1076#1082#1072
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object Splitter1: TSplitter
           Left = 0
           Top = 220
@@ -1342,7 +1354,7 @@ object VisForm: TVisForm
     Left = 460
     Top = 368
     Bitmap = {
-      494C010102000800E40010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010102000800E80010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

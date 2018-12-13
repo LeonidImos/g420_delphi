@@ -131,7 +131,12 @@ object ControlForm: TControlForm
       Width = 567
       Height = 372
       Align = alClient
-      ItemHeight = 13
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -13
+      Font.Name = 'Courier New'
+      Font.Style = []
+      ParentFont = False
       TabOrder = 1
       OnClick = ListBox1Click
     end

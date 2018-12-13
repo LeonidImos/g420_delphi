@@ -619,6 +619,7 @@ type
     sig_id:dword;
     br: dword;
     table_on: word;
+    reserv: word;
   end;
 
   PSigParamsShort = ^TSigParamsShort;

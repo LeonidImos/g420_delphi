@@ -1079,11 +1079,12 @@ begin
     if EventSendTimer(CurTime) then exec:=true;
     if EventTestFiles(CurTime) then exec:=true;
 
-    if exec then IdleSleepTime:=CurTime+100/(24*3600*1000)
+    done:=false;
+{    if exec then IdleSleepTime:=CurTime+100/(24*3600*1000)
     else if CurTime>IdleSleepTime then
     begin
       done:=true;
-    end;
+    end;  }
   end;
 end;
 //------------------------------------------------------------------------------

@@ -14,6 +14,8 @@ type
     sig_id_num: dword;
     sig_id_type: integer;
     list_ind: integer;
+    bitrate: dword;
+    played: boolean;
   end;
 
   TListSignal = record
@@ -108,7 +110,7 @@ type
     procedure LoadParamFromFile;
     procedure SaveParamToFile;
     procedure pars_descriptors(leng_mess: integer; buf: pointer);
-    procedure pars_parametrs(leng_mess: integer; buf: pointer);
+    procedure pars_parametrs(leng_mess: integer; p_params: PSigParamsShort);
 
     function GetName(dcr: PSigDescriptor): string;
   public
@@ -328,11 +330,12 @@ begin
     if EventSendTimer(CurTime) then exec:=true;
 //    if EventTestFiles(CurTime) then exec:=true;
 
-    if exec then IdleSleepTime:=CurTime+100/(24*3600*1000)
+    done:=false;
+{    if exec then IdleSleepTime:=CurTime+100/(24*3600*1000)
     else if CurTime>IdleSleepTime then
     begin
       done:=true;
-    end;
+    end;      }
 //  end;
 end;
 //------------------------------------------------------------------------------
@@ -1413,6 +1416,9 @@ begin
     sig_info[page_ind].list[sig_count].sig_id_num:=sig_id_num;
     sig_info[page_ind].list[sig_count].sig_id_type:=sig_id_type;
     sig_info[page_ind].list[sig_count].list_ind:=list_ind;
+    sig_info[page_ind].list[sig_count].bitrate:=0;
+    sig_info[page_ind].list[sig_count].played:=false;
+
   end;
 end;
 //------------------------------------------------------------------------------
@@ -1534,21 +1540,39 @@ end;
 //------------------------------------------------------------------------------
 procedure TControlForm.ShowPage;
 var pind, {sind, }page_count, sig_count, i, cur_ind: integer;
+st: string;
 begin
   pind:=TabControl1.TabIndex;
   page_count:=length(sig_info);
   if page_count>TabControl1.Tabs.Count then page_count:=TabControl1.Tabs.Count;
 
   if (pind<0)or(pind>=page_count) then exit;
-  if pind=old_page then exit;
+  sig_count:=length(sig_info[pind].list);
+  if (pind=old_page)and(sig_count=ListBox1.Items.Count) then
+  begin
+    for i:=0 to sig_count-1 do
+    begin
+      st:=sig_info[pind].list[i].name;
+      if sig_info[pind].list[i].played then st:=st+' + ' else st:=st+'   ';
+      if sig_info[pind].list[i].bitrate>0 then
+        st:=st+' ('+FloatToStrF(sig_info[pind].list[i].bitrate/1e6, FFFixed, 4, 2)+' Ìבטע/ס)';
+      if ListBox1.Items[i]<>st then ListBox1.Items[i]:=st;
+    end;
+    exit;
+  end;
 
   if (old_page>=0)and(old_page<page_count) then
     sig_info[old_page].cur_ind:=ListBox1.ItemIndex;
 
   ListBox1.Clear;
-  sig_count:=length(sig_info[pind].list);
   for i:=0 to sig_count-1 do
-    ListBox1.Items.Add(sig_info[pind].list[i].name);
+  begin
+    st:=sig_info[pind].list[i].name;
+    if sig_info[pind].list[i].played then st:=st+' + ' else st:=st+'   ';
+    if sig_info[pind].list[i].bitrate>0 then
+      st:=st+' ('+FloatToStrF(sig_info[pind].list[i].bitrate/1e6, FFFixed, 4, 2)+' Ìבטע/ס)';
+    ListBox1.Items.Add(st);
+  end;
 
   cur_ind:=sig_info[pind].cur_ind;
   if (cur_ind>=0)and(cur_ind<sig_count) then
@@ -1568,6 +1592,7 @@ size: int64;
 leng_one, block_count_one: int64; }
 name: AnsiString;
 pind, sind, page_count, sig_count: integer;
+param: word;
 begin
   if not CheckBox1.Checked then bitrateout:=0
   else
@@ -1602,6 +1627,8 @@ begin
 
   SendCommand(0, Comand_g420_SetPlayMode, SizeOf(mess) div 2, @mess);
 
+  param:=1;
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Parametrs, 1, @param);
 
 end;
 
@@ -1727,9 +1754,35 @@ begin
 end;
 
 //------------------------------------------------------------------------------
-procedure TControlForm.pars_parametrs(leng_mess: integer; buf: pointer);
+procedure TControlForm.pars_parametrs(leng_mess: integer; p_params: PSigParamsShort);
+var i, pi, si: integer;
 begin
+  if p_params.req_type<>1 then exit;
+  if (dword(@p_params.sig_params) - dword(p_params)) + (p_params.signal_count*SizeOf(TSigParamOneShort)) <> leng_mess then exit;
 
+
+
+  for pi:=0 to Length(sig_info)-1 do
+  begin
+    for si:=0 to Length(sig_info[pi].list)-1 do
+    begin
+      for i:=0 to p_params.signal_count-1 do
+      begin
+        if sig_info[pi].list[si].sig_id = p_params.sig_params[i].sig_id then
+          sig_info[pi].list[si].bitrate:=p_params.sig_params[i].br;
+      end;
+      if (pi=p_params.Cur_list)and(si=p_params.Cur_signal) then
+      begin
+        sig_info[pi].list[si].played:=true;
+        sig_info[pi].list[si].bitrate:=p_params.br_out;
+      end
+      else sig_info[pi].list[si].played:=false;
+
+    end;
+  end;
+
+
+  ShowPage;
 end;
 //------------------------------------------------------------------------------
 

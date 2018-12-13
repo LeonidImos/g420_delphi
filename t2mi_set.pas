@@ -431,6 +431,8 @@ begin
   param:=4;
   SendCommandDSP(0, DSP_Comand_Set_T2MI_Param, 1, @param);
 
+  param:=1;
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Parametrs, 1, @param);
 end;
 //------------------------------------------------------------------------------
 
@@ -577,6 +579,8 @@ begin
     SendCommandDSP(0, DSP_Comand_Set_T2MI_Param, 1, @param);
   end;
 
+  param:=1;
+  SendCommandDSP(0, DSP_Comand_Get_Signal_Parametrs, 1, @param);
 end;
 
 //------------------------------------------------------------------------------
